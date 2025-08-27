@@ -1,79 +1,79 @@
-Below is an analysis and a refined set of requirements for the proposed 2D orbital simulator:
+Below is an analysis of the original goals along with a refined set of requirements that make the intent and scope clearer, more actionable, and testable.
 
-──────────────────────────────
-1. Purpose and Scope
+─────────────────────────────  
+1. Overall Simulation Objective
 
-• Purpose:  
-  Develop a simulation tool that models the two-body orbital dynamics in two dimensions using Newtonian physics. The simulator will compute gravitational forces and update the position and velocity of two celestial bodies over time. Optionally, it will provide a visual representation of the orbit using Matplotlib.
+Original: “Develop a basic N-body simulation in 2D to model gravitational interactions between multiple planets.”
 
-• Scope:  
-  – Model only two interacting bodies.  
-  – Use Newton’s law of universal gravitation and basic kinematics for simulation.  
-  – Support both non-visual numerical output and optional graphical display.
+Refinement:
+• The system shall simulate gravitational interactions between multiple celestial bodies (planets, asteroids, etc.) in a two-dimensional space.
+• It shall model the dynamics of these bodies under mutual gravitational forces using physics-based equations.
+• The simulation should provide a clear visual representation and/or data outputs suitable for analysis.
 
-──────────────────────────────
-2. Functional Requirements
+─────────────────────────────  
+2. Handling Celestial Bodies
 
-A. Simulation Engine  
-  1. Physics Calculations:  
-    • Compute gravitational force between the two bodies using Newton’s law.  
-    • Calculate acceleration for both bodies based on the computed forces and their masses.  
-    • Update velocities and positions at each simulation time step using appropriate numerical integration techniques (e.g., Euler’s method or a higher-order scheme if needed).  
+Original: “Dynamically handle any number of celestial bodies.”
 
-  2. Time Stepping:  
-    • Define a configurable time step for the simulation.  
-    • Continually update positions, velocities, and forces for each time step until a specified simulation duration is reached.
+Refinement:
+• The simulation must allow users to define and manipulate an arbitrary number of celestial bodies at configuration time, keeping in mind realistic performance limitations of the hardware.
+• Each celestial body shall have configurable properties such as mass, initial position (x, y coordinates), initial velocity, and unique identifier.
+• The system shall support dynamic addition or removal of bodies (if needed by the use case) prior to the simulation run or via reloading a configuration.
+• Validation constraints should be in place to ensure that the input values (e.g., mass must be positive, positions within a realistic range) are within acceptable limits.
 
-B. Data Output  
-  1. Logging/Recording:  
-    • Output the positions (and optionally velocities) of both bodies at every simulation step.  
-    • Allow the output to be written to a file (e.g., CSV, JSON) for post-analysis (or simply printed to the console during debugging).  
-    • Support different verbosity levels (e.g., basic position information vs. detailed physics state).
+─────────────────────────────  
+3. Numerical Integration Methods
 
-C. Visualization (Optional)  
-  1. 2D Visual Representation:  
-    • Integrate with Matplotlib to create an optional real-time or post-simulation visualization of the bodies’ trajectories.  
-    • Provide clear visual cues for each body (e.g., different colors or markers).  
-    • Optionally animate the simulation to visualize the step-by-step orbit evolution.  
-    • Enable users to pause, resume, or adjust speed if implementing an interactive visualization.
+Original: “Implement numerical integration methods (Euler, Verlet, or Runge-Kutta).”
 
-──────────────────────────────
-3. Non-Functional Requirements
+Refinement:
+• The simulation engine shall implement at least three numerical integration methods:
+  – Euler (first-order),
+  – Verlet (symplectic integration, preferred for energy conservation in long-term simulations), and
+  – Runge-Kutta (specifically RK4, when higher accuracy is required).
+• Users must be able to select the integration method at the start of the simulation via configuration.
+• Numerical integration parameters such as time step size shall be configurable and should be documented in the system settings.
+• The system must provide an option to adjust simulation speed versus accuracy trade-offs.
 
-A. Performance  
-  • The simulation should run efficiently in real time (or near-real time) given the limited complexity (only two bodies).  
-  • Computational overhead should be low enough to allow for smooth visualization, if enabled.
+─────────────────────────────  
+4. Saving and Loading Simulation Settings
 
-B. Accuracy  
-  • The integration algorithm should be chosen to balance simplicity and accuracy. Document any approximations (e.g., choice of time step, integration method) and allow them to be configurable.  
-  • Provide clear documentation on the physical assumptions (e.g., point masses, no perturbations from additional forces) used in the simulation.
+Original: “Save and load simulation settings from JSON.”
 
-C. Usability  
-  • The user interface (command-line or simple GUI) should allow users to easily input initial conditions (positions, velocities, masses) and simulation parameters (time step, total duration, etc.).  
-  • For the visualization mode, ensure that the Matplotlib interface is intuitive (e.g., proper labeling and scaling).
+Refinement:
+• The system shall support exporting the complete simulation configuration to a JSON file. This configuration includes:
+  – Global simulation parameters (e.g., gravitational constant, simulation time step, integration method selected).
+  – A list of all celestial bodies along with their initial conditions and properties.
+• The system shall allow loading a simulation configuration from a JSON file.
+• A well-defined JSON schema (with versioning information) must be established to ensure backward and forward compatibility.
+• The application should validate the JSON configuration at load time and provide descriptive error messages for any validation issues.
 
-D. Modularity and Extensibility  
-  • Design the simulation architecture to allow future extensions (e.g., increasing to three or more bodies, switching to 3D simulation, integrating more complex physics).  
-  • Separate core simulation logic from I/O and visualization components.
+─────────────────────────────  
+5. Additional Considerations
 
-──────────────────────────────
-4. Assumptions and Constraints
+• User Interface:  
+  – The simulation’s front end (GUI or command-line) should display simulation progress and potentially allow pausing, resuming, or adjusting parameters during runtime.
+  – A simple visual 2D representation (or log output) of the trajectories of the celestial bodies is required to help users verify the simulation behavior.
 
-• Only two celestial bodies are involved; effects from other bodies or relativistic corrections are not considered.  
-• The simulation is limited to two spatial dimensions (x and y).  
-• The user is expected to provide physically reasonable initial conditions to avoid numerical instability (e.g., extremely large/small time steps, unrealistic initial velocities).
+• Performance and Scalability:  
+  – Provide performance benchmarks or guidelines that describe expected behavior when the number of celestial bodies increases.
+  – Consider memory and computational constraints, and document any limitations.
 
-──────────────────────────────
-5. Acceptance Criteria
+• Extensibility:  
+  – The design should be modular to allow additional forces or physical phenomena (e.g., collisions, relativistic corrections) to be added in the future.
+  – Configuration management via JSON should be adaptable for new parameters without breaking existing simulation setups.
 
-• The simulator correctly computes and outputs the positions, velocities, and gravitational forces at each step.  
-• Given a set of initial conditions, the orbital paths generated via Matplotlib (when enabled) should correspond with expected Newtonian orbits (e.g., elliptical or hyperbolic trajectories as applicable).  
-• The system should allow the user to adjust simulation parameters (initial conditions, time step, total duration) easily.  
-• The modular design enables the decoupling of the physics engine from the visualization, supporting future enhancements.
+─────────────────────────────  
+6. Traceability and Testing
 
-──────────────────────────────
-Summary
+• Each requirement must be testable:  
+  – Validate that the numerical integration method produces reasonable and expected trajectories for known scenarios.
+  – Ensure that adding/removing celestial bodies works as intended.
+  – Verify that the saved JSON file contains all necessary settings and that loading the same file reproduces the simulation accurately.
 
-The initial goals have been refined into a well-defined set of requirements addressing functional aspects (simulation engine, data output, and optional visualization), non-functional considerations (performance, accuracy, usability, extensibility), and clear acceptance criteria. This refined outline ensures that the core functionality (calculating gravitational force, updating bodies’ states, and outputting results) is robustly defined while providing optional enhancements (visualization) and a gateway for future improvements.
+• Acceptance criteria should be defined for each high-level goal, giving clear pass/fail conditions during testing.
 
-This refined set of requirements can now serve as the baseline for further technical design, prototyping, and eventual code development.
+─────────────────────────────  
+Conclusion
+
+By refining the original goals to include explicit details on simulation scope, celestial body management, numerical methods, configuration management, and additional considerations, we obtain a clearer picture of both the functional requirements and the non-functional constraints. This refined requirement set now supports traceability, testing, and possible future expansion of the simulation software.

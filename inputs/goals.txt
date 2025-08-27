@@ -1,5 +1,6 @@
-Develop a basic N-body simulation in 2D to model gravitational interactions between multiple planets.
+Create a 3D gravitational simulation with collision detection.
 Features:
-- Dynamically handle any number of celestial bodies
-- Implement numerical integration methods (Euler, Verlet, or Runge-Kutta)
-- Save and load simulation settings from JSON
+- Model planetary motion in 3D space
+- Detect and handle collisions (merge or bounce)
+- Export simulation data as CSV or HDF5
+- Interactive 3D visualization

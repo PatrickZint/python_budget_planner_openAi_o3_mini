@@ -1,122 +1,192 @@
-Below is a high-level system architecture for the 2D orbital simulator that meets both the detailed functional and non‐functional requirements. This design decomposes the system into three main layers with clearly separated responsibilities, while selecting a technology stack that leverages Python’s rich numerical and visualization libraries.
+Below is a high-level system architecture that meets the specifications for the 2D N-body simulation software. This design leverages a modular, layered approach to separate concerns, support multiple numerical integration strategies, and ensure maintainability, testability, and scalability.
 
-──────────────────────────────
-1. Overall Architectural Layers
+─────────────────────────────  
+1. Architectural Overview  
+─────────────────────────────
 
-A. Core Simulation Engine Layer  
- • Responsibility:  
-  – Implements Newtonian physics, gravitational force computations, kinematic updating, and configurable numerical integration (e.g., Euler method or a higher-order method).  
-  – Manages simulation timing and error detection (e.g., warnings on unstable simulation behavior).  
- • Features:  
-  – Encapsulated “physics engine” module that can operate in “batch” mode for logging and file exports, as well as integrated with visualization when needed.  
-  – Fully decoupled from the user I/O and visualization modules to allow for independent testing and future extension (such as adding multi-body or 3D support).
+The software is divided into four primary layers or modules:
 
-B. Data I/O Layer  
- • Responsibility:  
-  – Handles input validation, configuration parsing (e.g., command-line flags or configuration files defined in JSON/YAML), and logging.  
-  – Exports simulation results (positions, velocities, forces over time) to multiple formats such as CSV, JSON, or standard output.  
- • Features:  
-  – Configurable verbosity levels to control the log details (from basic state variables to full computation trace).  
-  – Use of Python’s logging module for structured logging and audit trails.
+A. Simulation Core Layer  
+ • Responsible for physics computations, numerical integration, and dynamic celestial body state updates.  
+ • Implements a Strategy Pattern for numerical integrators (Euler, Verlet, RK4) so that integration methods can be interchanged easily.  
 
-C. Visualization Layer  
- • Responsibility:  
-  – Provides both static plots and animated, interactive 2D visualization of the celestial bodies’ trajectories using Matplotlib.  
-  – Optionally allows for interactive controls (pause/resume, speed adjustment) – either implemented as simple command-line key commands or a minimal GUI.  
- • Features:  
-  – Clearly labeled axes, legends, distinct marker colors, and scaling controls for intuitive user experience.  
-  – Isolation from the core simulation allows the visualization to be optionally enabled without impacting computational performance.
+B. Configuration Manager  
+ • Handles loading/saving simulation configuration via a JSON file.  
+ • Validates configurations against a versioned and well-documented JSON schema.  
+ • Provides descriptive error messages on invalid input and supports dynamic configuration reloads before simulation start.  
 
-──────────────────────────────
-2. Component Design Overview
+C. User Interface (UI) Layer  
+ • Provides both a command-line interface (CLI) and an optional graphical user interface (GUI, e.g., using a lightweight toolkit).  
+ • Responsible for real-time visualization of simulation progress (using Matplotlib) and interactive controls (pause/resume, simulation speed adjustments).  
+ • Uses an MVC or MVVM design pattern if a GUI is implemented, segregating the simulation state (model) from the presentation (view) and user interactions (controller/view-model).  
 
-A. Simulation Engine Module  
- • Components:  
-  1. Physics Calculator  
-   – Computes gravitational forces using F = G·(m₁*m₂)/r² with proper 2D vector handling.  
-   – Computes accelerations (a = F/m) and supports multiple integration strategies (e.g., Euler and potential higher-order methods).  
-  2. Integrator  
-   – Provides configurable time stepping and numerical integration routines.  
-   – Monitors simulation conditions and issues warnings if numerical divergence or instability is detected.  
-  3. Time-Step Manager  
-   – Manages simulation iterations using user-specified time-step size and total simulation duration.
+D. Testing and Validation Module  
+ • Contains unit tests for individual functions (e.g., gravitational force calculations, numerical integrators) and integration tests linking configuration with simulation operation.  
+ • Integrates performance benchmarks to ensure that update cycles meet the 500-millisecond requirement for interactive simulations.  
+ • Uses CI tools (e.g., GitHub Actions or Travis CI) to trigger automated test suites.
 
-B. Data I/O Module  
- • Components:  
-  1. Configuration Parser  
-   – Uses libraries such as argparse (for command-line) or a JSON/YAML parser for file configuration.  
-   – Validates inputs such as initial conditions, masses, time-step, and simulation duration.  
-  2. Logger  
-   – Employs Python’s logging module to log simulation events, error conditions, and state variables for debugging and audit logging.  
-   – Provides options to export output in CSV or JSON formats, and supports different levels of verbosity.
+─────────────────────────────  
+2. Component Design and Data Flow  
+─────────────────────────────
 
-C. Visualization Module  
- • Components:  
-  1. Plot Manager  
-   – Uses Matplotlib to produce static trajectory plots and animated simulations.  
-   – Implements clear labeling (axes, legends) and marker differentiation for the bodies.  
-  2. User Interaction Controller  
-   – Optionally integrates interactive controls (e.g., pausing/resuming and adjusting simulation speed).  
-   – Could use Matplotlib’s interactive backends or minimal GUI elements (e.g., Tkinter) if needed.
+Below is a component-level breakdown with an overview of the data flow:
 
-──────────────────────────────
-3. Technology Stack Selection
+A. Components  
+ 1. Configuration Manager Component  
+  – Responsibilities:  
+   • Read JSON configuration files.  
+   • Validate configuration using a JSON Schema.  
+   • Instantiate global simulation parameters and the list of celestial bodies.  
+  – Interfaces: Exposes methods load_configuration() and save_configuration().
 
-• Primary Language: Python  
- – Advantages: Wide availability of scientific computing libraries, ease of prototyping, and readability.  
- – Best Practices: Use virtual environments and dependency managers (pip or Poetry) to manage packages.
+ 2. Celestial Body Component  
+  – Responsibilities:  
+   • Encapsulate body properties (identifier, mass, position, velocity).  
+   • Validate properties during instantiation.  
+  – Interfaces: Provides getters/setters needed for simulation updates.
 
-• Numerical Computation: NumPy  
- – Purpose: For efficient vectorized operations and matrix math during physics calculations.  
- – Benefit: Improved performance (target <200ms per simulation step) even under interactive simulation conditions.
+ 3. Simulation Core Component  
+  – Responsibilities:  
+   • Compute gravitational interactions between bodies based on Newton’s law.  
+   • Update body states (position and velocity) using a chosen numerical integrator.  
+   • Toggle integration methods using an integration strategy interface.  
+  – Key Classes:  
+   • BaseIntegrator (interface)  
+   • EulerIntegrator, VerletIntegrator, RK4Integrator (concrete implementations)  
+  – Interfaces: start_simulation(), pause(), resume(), set_time_step(), etc.
 
-• Advanced Integration (Optional): SciPy  
- – Purpose: To offer more accurate and advanced numerical integration methods if needed.  
- – Benefit: Allows switching from simple Euler integration to higher-order methods on demand.
+ 4. UI Component  
+  – Responsibilities:  
+   • Render simulation progress in real time (using Matplotlib for dynamic plots or terminal logs).  
+   • Accept user actions (pause/resume, simulation speed adjustments) via CLI/GUI inputs.  
+  – Interfaces: update_display(simulation_state), register_event_handlers().
 
-• Visualization: Matplotlib  
- – Purpose: Rendering 2D plots and animations of orbital trajectories.  
- – Benefit: High configurability for both static plot outputs and interactive displays with built-in interactivity features.
+ 5. Logging and Error Handling Component  
+  – Responsibilities:  
+   • Record simulation events, configuration errors, and performance warnings.  
+   • Ensure that sensitive information is not logged.  
+  – Interfaces: log_info(), log_warning(), log_error().
 
-• Configuration and Logging:  
- – argparse for command-line arguments and JSON/YAML libraries for configuration files.  
- – Python’s logging module for structured and audit logging.
+ 6. Testing and CI Component  
+  – Responsibilities:  
+   • Run unit and integration tests (possibly using pytest).  
+   • Execute performance benchmarks.  
+  – Interfaces: Test suites integrated into a CI pipeline.
 
-──────────────────────────────
-4. Interaction Flow Summary
+B. Data Flow Sequence  
+ 1. Startup  
+  – The Configuration Manager loads the JSON configuration file and validates its contents.  
+  – Celestial Body objects are created based on this configuration.  
+  – Global parameters (gravitational constant, time step, integrator selection) are set.
 
-Step 1: Input and Configuration  
- • The user supplies initial conditions and simulation parameters (via command-line or a configuration file).  
- • The Configuration Parser validates inputs.
+ 2. Simulation Initialization  
+  – The Simulation Core reads configuration details and instantiates the appropriate numerical integration strategy.  
+  – Integration parameters are set (e.g., time step, method-specific settings).
 
-Step 2: Simulation Engine Execution  
- • The Physics Calculator computes forces, accelerations, and positions using the chosen numerical integrator.  
- • The Time-Step Manager iterates over the simulation duration and monitors potential numerical issues.
+ 3. Simulation Runtime  
+  – In each simulation cycle:  
+   • Simulation Core calculates gravitational force between bodies and updates their states.  
+   • Selected numerical integrator (via Strategy Pattern) applies the integration method.  
+   • Updated simulation state is passed to the UI component for display.  
+   • Logging records key events and performance data.
 
-Step 3: Data I/O Operations  
- • After each time step (or in batches), the simulation state is logged at the configured verbosity level through the Logger.  
- • Outputs are exported to CSV or JSON formats as required.
+ 4. Configuration / Control Changes  
+  – Prior to simulation start, dynamic addition or removal of celestial bodies is supported via configuration reload.  
+  – At runtime, UI inputs (pause/resume, speed adjustments) are captured and passed to the Simulation Core.
 
-Step 4: Visualization (Optional)  
- • If visualization is enabled, the Plot Manager captures simulation data in real time to produce animated plots.  
- • The User Interaction Controller allows users to pause or adjust simulation speed on the fly.
+─────────────────────────────  
+3. Technology Stack Selection  
+─────────────────────────────
 
-──────────────────────────────
-5. Modularity and Extensibility Considerations
+A. Core Language and Runtime  
+ • Python version 3.8+  
+  – Offers modern language features and broad community support.
 
-• Loose Coupling:  
- – Each module (simulation, I/O, visualization) communicates via well-defined interfaces (e.g., data objects that represent state at each time step).  
- – This makes it straightforward to replace the numerical integrator or extend the simulation engine to include more bodies or a third dimension later on.
+B. Numerical Computation and Scientific Libraries  
+ • NumPy  
+  – Efficient array operations, vectorized computations, and optimized numerical performance essential for handling computations with many celestial bodies.
 
-• Testability:  
- – Unit tests should be implemented for the physics calculations (e.g., verifying gravitational force and kinematics outcomes) using known physical scenarios such as circular or elliptical orbits.  
- – Integration tests can validate that configuration inputs lead to expected simulation behavior.
+C. Visualization and Plotting  
+ • Matplotlib  
+  – Provides dynamic 2D plotting capabilities for real-time simulation visualization.  
+  – Can be extended to interactive plots if using toolkits like Tkinter or PyQt.
 
-• Security:  
- – Input validation routines are in place to check user-supplied values.  
- – Secure coding practices following OWASP and industry standards ensure robustness even as the system evolves.
+D. Configuration and Data Handling  
+ • JSON for configuration files  
+  – Clear, human-readable format with versioned schema support (validated via libraries such as jsonschema).
 
-──────────────────────────────
-6. Conclusion
+E. Dependency Management and Environment  
+ • virtualenv or conda  
+  – Keeps Python package installations isolated and reproducible.  
+ • Docker  
+  – (Optional) Containerize the application for deployment consistency across environments.
 
-This high-level architecture clearly delineates the responsibilities into a Core Simulation Engine, Data I/O, and Visualization layer. Using Python, NumPy, and Matplotlib ensures that the simulator meets performance (sub-200ms simulation step), ease of use, and extensibility requirements while remaining modular enough to support future enhancements. Each module’s clear boundaries allow for independent development, testing, and future scalability—fulfilling all specified functional and non‐functional requirements.
+F. Testing and Continuous Integration  
+ • pytest  
+  – Facilitates unit, integration, and performance testing.  
+ • GitHub Actions, Travis CI, or similar CI tools  
+  – Automate testing and ensure code quality with each commit.
+
+G. Additional Libraries and Tools  
+ • Logging: The built-in Python logging module (with careful configuration to avoid leaking sensitive data).  
+ • Configuration Validation: jsonschema for enforcing JSON schema rules.  
+ • (Optional) UI Toolkit: For a GUI implementation, lightweight toolkits like Tkinter (bundled with Python) or PyQt can be used.
+
+─────────────────────────────  
+4. Design Patterns and Best Practices  
+─────────────────────────────
+
+A. Strategy Pattern for Numerical Integration  
+ • Define a common interface (e.g., BaseIntegrator) that is implemented by EulerIntegrator, VerletIntegrator, and RK4Integrator.  
+ • This abstraction allows the Simulation Core to delegate integration tasks to the selected strategy.
+
+B. MVC/MVVM Pattern for UI (if a GUI is implemented)  
+ • Separates the simulation domain logic (Model) from the presentation (View) and user controls (Controller or View-Model).
+
+C. Dependency Injection  
+ • Inject configuration parameters and external dependencies (like file system access for configuration files) to simplify unit testing and enable mocks.
+
+D. Layered Architecture  
+ • Clearly separate the core simulation logic from configuration management and UI.  
+ • This design aids in performance scalability, maintainability, and the future extension of system components (e.g., adding collision detection).
+
+─────────────────────────────  
+5. High-Level Diagram (Conceptual)
+─────────────────────────────
+
+                 +------------------------------------+
+                 |        User Interface Layer        |
+                 |  (CLI/GUI, Matplotlib Visualization)|
+                 +-----------------^------------------+
+                                   |
+                                   |
+                 +-----------------+------------------+
+                 |    Simulation Core Layer           |
+                 | (Physics engine, Numerical Integrator)|
+                 |    - BaseIntegrator (Strategy)      |
+                 |    - Euler, Verlet, RK4             |
+                 +-----------------^------------------+
+                                   |
+                                   |
+                 +-----------------+------------------+
+                 |     Configuration Manager         |
+                 | (JSON loader, validator, exporter)|
+                 +-----------------^------------------+
+                                   |
+                                   |
+                 +-----------------+------------------+
+                 | Testing and CI Pipeline Component |
+                 | (Unit/Integration Tests, Benchmarks)|
+                 +------------------------------------+
+
+─────────────────────────────  
+6. Summary
+─────────────────────────────
+
+• The Simulation Core performs physics calculations and state updates using a strategy pattern, allowing selection between different integration methods.
+• The Configuration Manager abstracts file I/O, JSON validation, and configuration reloading with versioned schemas.
+• The UI Layer, built with CLI/GUI components and real‐time visualization (Matplotlib), ensures user interaction and simulation display.
+• The Testing Module encompasses unit, integration, and performance tests, supported by continuous integration pipelines.
+• The Python-based technology stack, leveraging NumPy for numerical performance and Docker/virtualenv for environment management, meets the performance, reliability, and maintainability requirements.
+
+This high-level architecture provides a clear modular roadmap that satisfies both functional and non-functional requirements while being extensible for future enhancements.

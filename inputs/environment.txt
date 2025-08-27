@@ -1,2 +1,2 @@
 The system must be secure and provide a reasonable performance.
-Technology stack: Use Python, Numpy, and Matplotlib.
+Technology stack: Use Python, Numpy, VPython, and HDF5.
