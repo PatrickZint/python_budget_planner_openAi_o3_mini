@@ -1,4 +1,5 @@
 Build a basic N-body simulation in 2D to model gravitational interactions between multiple planets using Newtonian physics.
+The result should be a functional application with, so if necessary, create required config files.
 Features:
 - Calculate gravitational forces, velocities, and positions
 - Output the forces and positions at each time step
