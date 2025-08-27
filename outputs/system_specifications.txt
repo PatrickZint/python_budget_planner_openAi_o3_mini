@@ -1,191 +1,215 @@
-Below is a detailed specification document for the 2D Newtonian N-body simulation. This document breaks down the system’s functional and non‑functional requirements, and offers design recommendations to guide implementation using Python and pygame.
+Below is a detailed system specification that translates the refined goals and environmental constraints into concrete requirements and design recommendations. This document is intended to serve as a blueprint for the development, testing, and future evolution of the Personal Budget Planner application.
 
-──────────────────────────────
-1. OVERVIEW
+─────────────────────────────  
+1. System Overview  
+─────────────────────────────
 
-The system is intended to simulate gravitational interactions between an arbitrary number of celestial bodies in a 2D space. The simulation uses Newton’s law of universal gravitation, updates positions and velocities using numerical integration, and provides a real‑time visual interface together with configurable logging and setup options. The following sections define clear, testable requirements and propose an architectural design that considers performance, usability, and future extensibility.
+The Personal Budget Planner is a web-based application designed to help users track and analyze their income and expenses using individual transactions. Users will be able to add, modify, and delete transactions; categorize them using both predefined and custom categories; and generate both numeric and graphical summaries (monthly and yearly). The backend will rely on Python (3.8+), SQLite3, Pandas, and Matplotlib for data management, analysis, and visualization. The deployment environment includes standard configuration files (e.g., config.json) and build tools (e.g., package.json for Node.js-based front-end components if needed), with performance design targets that provide measurable response times for database queries and visualizations.
 
-──────────────────────────────
-2. FUNCTIONAL REQUIREMENTS
+─────────────────────────────  
+2. Functional Requirements  
+─────────────────────────────
 
-2.1 FR1 – Physics Simulation
- • Computation of Forces:  
-  – The simulation engine shall compute gravitational forces between every pair of bodies using Newton’s law:
-   Force = (G * m1 * m2) / (r²); account for vector directions.  
- • Numerical Integration:  
-  – The engine shall update each body’s velocity and position using one of the following methods:  
-   – Euler (simpler implementation, lower accuracy),  
-   – Verlet (balancing performance and accuracy), or  
-   – Runge–Kutta (for higher accuracy)  
-  – The chosen numerical integration method shall be configurable via a configuration file parameter.  
- • Time Stepping:  
-  – The simulation engine must implement a configurable, constant time step interval (dt) that can be defined at startup.
-  – The simulation loop shall account for dt in all physics updates.
+A. Transaction Management  
+ • FR1. Add Transaction:  
+  – Users can input a new transaction with fields: date, amount, description, and category.  
+  – Validation to ensure amount is numeric and a date is provided.  
+ • FR2. Edit Transaction:  
+  – Users can update existing transactions with new values.  
+  – Validation ensures integrity of the updated fields.  
+ • FR3. Delete Transaction:  
+  – Users can remove a transaction.  
+  – A confirmation dialog (or equivalent mechanism) is required to prevent accidental deletion.
 
-2.2 FR2 – Data Output & Logging
- • At each simulation time step, the application shall record the following data per body:
-  – 2D Position (x, y) coordinates  
-  – Velocity vector (vx, vy)  
-  – Net gravitational force (Fx, Fy)  
- • Output Modes:  
-  – The system shall support outputting data to at least one of these targets:
-   ○ Console  
-   ○ Log file  
-   ○ An on-screen display panel within the GUI  
- • A configuration parameter (set via a config file such as JSON) must allow the user to select the desired output mode (or combination).
- • Logging should include timestamps and be formatted for later analysis.
+B. Categorization  
+ • FR4. Income/Expense Flag:  
+  – Every transaction must be marked as Income or Expense to differentiate financial flows.  
+ • FR5. Predefined and Custom Categories:  
+  – Support assigning transactions to predefined categories (Salary, Groceries, Utilities, Entertainment, etc.).  
+  – Provide an interface to add custom categories.  
+ • FR6. Manage Category List:  
+  – Allow operations to add, update, or remove categories.
+  – Ensure that deletion of a category provides options to reassign or archive associated transactions.
 
-2.3 FR3 – Visualization
- • Real-Time 2D Rendering:  
-  – The GUI, implemented using pygame, shall render each celestial body as a visually distinct object (e.g., circle, custom icon).
-  – The display must update at a target frame rate (configured per NFRs below) and reflect the simulation state in real time.  
- • User Interaction Controls:  
-  – The GUI shall include controls for:
-   ○ Play/Resume simulation  
-   ○ Pause simulation  
-   ○ Reset simulation to initial conditions  
-   ○ Adjust simulation speed (altering dt or visual frame delay)  
-  – The simulation speed slider/control shall provide immediate feedback and adjust both the physics update interval and visualization refresh rate accordingly.
+C. Summary Reports and Analysis  
+ • FR7. Monthly Summary:  
+  – Generate a report that shows total income, total expenses, and net balance for each month.  
+ • FR8. Yearly Summary:  
+  – Aggregate monthly data to provide an annual view, including trend analysis and comparisons between years.  
+ • FR9. Export/Print Options (Optional/iterative):  
+  – Allow users to export summaries in formats such as PDF or CSV, and/or print them directly.
 
-2.4 FR4 – Dynamic Handling of Celestial Bodies
- • Initialization via Configuration:  
-  – The application shall load an initial set of celestial bodies from an external configuration file that includes parameters for each body (mass, initial position, velocity, etc.).  
- • Scalability and Dynamic Modifications:  
-  – The system shall be implemented to dynamically handle any number of bodies (limited only by performance constraints).
-  – Optionally, a GUI mechanism (e.g., an “Add Body” button) can allow the user to insert new bodies during runtime.
-  – Provide mechanisms to modify or remove bodies during runtime if required.
- • Performance Consideration:  
-  – The simulation algorithm shall scale gracefully with an increasing number of bodies, employing optimizations (e.g., spatial partitioning or limiting pairwise calculations) if necessary.
+D. Data Visualization  
+ • FR10. Bar Charts:  
+  – Provide bar charts that depict income and expense trends over time.  
+ • FR11. Pie Charts:  
+  – Generate pie charts that illustrate the distribution of expenses by category.  
+ • FR12. Interactivity:  
+  – Enhance charts with interactive features (e.g., tooltips on hover, clickable segments for further details).
 
-2.5 FR5 – Configuration Management
- • Configuration Files:  
-  – At startup, the application shall load simulation parameters (such as the gravitational constant, time step size, numerical integration method, and initial state of celestial bodies) from an external file (JSON, XML, or similar).
-  – The system must validate the configuration file format and values; if the file is missing or incorrect, the system shall
-   ○ either generate a default configuration file or display a descriptive error message.
- • Runtime Configurability:  
-  – The system shall allow certain simulation parameters (e.g., simulation speed, display settings) to be adjusted at runtime through the GUI.
-  
-──────────────────────────────
-3. NON‑FUNCTIONAL REQUIREMENTS
-
-3.1 NFR1 – Performance
- • Frame Rate:  
-  – The simulation shall maintain a minimum frame rate of 60 FPS on baseline hardware (e.g., Intel i5 8th Gen, integrated graphics, 8GB RAM).  
- • Responsiveness:  
-  – User input (mouse clicks, key presses) shall be reflected in under 50 milliseconds latency.  
- • Resource Usage:  
-  – Memory usage should remain under defined limits (e.g., below 500 MB even under peak simulation load).  
- – CPU usage should be profiled and optimized; excessive load in situations with dozens to a few hundred bodies must be avoided.
- • Benchmarking:  
-  – The system development should include a suite of benchmarks (using cProfile or similar) to validate that performance targets are met throughout development.
-
-3.2 NFR2 – Usability
- • GUI Design:  
-  – The graphical interface must be intuitive, with clearly labeled buttons, controls, and indicators for simulation state (running, paused, error, etc.).  
-  – Tooltips or brief in-app documentation should describe the function of each control.
- • Error Feedback:  
-  – Error messages in both the log and on-screen (if applicable) must be clear, guiding the user to resolve issues (e.g., invalid configuration parameters).
-
-3.3 NFR3 – Reliability and Accuracy
- • Reproducibility:  
-  – For a given initial configuration and fixed parameters, repeated simulation runs should produce consistent and reproducible physical states.
- • Simulation Accuracy:  
-  – The numerical integration and physics computation shall achieve sufficient accuracy for the simulation’s purpose. Developers must document any trade-offs, such as the need for a small time step for stability.
- • Error Handling in Physics:  
-  – Special cases (like two bodies at nearly zero separation causing very large forces) must be detected and handled (for example, by imposing a minimum distance threshold).
-
-3.4 NFR4 – Maintainability
- • Code Documentation and Structure:  
-  – The codebase shall follow modular design principles. Modules may include physics engine, visualization, configuration management, logging, and UI controls.  
-  – Sufficient inline comments and external documentation (README, developer guide) must be maintained.
- • Extensibility:  
-  – The architecture shall allow future enhancements (e.g., extending to 3D, adding collision detection or new force types) with minimal restructuring.
- • Configurability:  
-  – Configuration files should use a clear schema and be easy to modify as requirements evolve.
-
-3.5 NFR5 – Portability and Platform Requirements
- • Cross‑Platform Deployment:  
-  – The application shall run on Windows, macOS, and Linux, leveraging pygame’s cross‑platform capabilities.
- • Library Choices:  
-  – The chosen GUI and simulation libraries (pygame, JSON parsers, etc.) must be cross‑platform.
- • Hardware Specifications:  
-  – The application shall specify baseline hardware requirements (e.g., processor, RAM) in the documentation for end users.
-
-──────────────────────────────
-4. SYSTEM DESIGN RECOMMENDATIONS
-
-4.1 Architectural Overview
- • Layered Architecture:  
-  – Core Physics Engine: Handles all physics calculation, time stepping, and numerical integration.
-  – Simulation Manager: Coordinates the simulation loop, manages simulation state, and invokes rendering and logging on each time step.
-  – Visualization and User Interface: Built using pygame; it renders the simulation state, processes user input, and displays output.
-  – Configuration & Logging Layer: Loads configuration files, validates parameters, and manages data output (file/console/onscreen log).
-
-4.2 Modular Separation
- • Physics Module:  
-  – Encapsulates bodies, forces, and integration methods.  
-  – This module should be well-tested in isolation (unit tests) to ensure numerical accuracy and performance.
- • IO & Configuration Module:  
-  – Uses standard Python libraries (e.g., json) to load and validate configuration.  
-  – Should support error correction (e.g., loading a default configuration) if issues occur.
- • Visualization/UI Module:  
-  – Built using pygame, with event loops decoupled from the physics simulation to ensure real-time updates.
-  – Incorporate separate classes or functions for rendering, handling user controls, and updating the simulation state display.
- • Logging Module:  
-  – Uses Python’s logging library, with configuration-driven handlers to write to file and/or console.  
-  – Should timestamp and format the simulation output clearly.
-
-4.3 Integration Considerations
- • Time Synchronization:  
-  – The simulation loop must synchronize physics updates, visualization refresh, and logging output to maintain consistency.
-  – Consider separation of simulation “ticks” from drawing frames to allow decoupled performance tuning.
+E. Additional Functional Considerations  
  • Error Handling:  
-  – Introduce try/catch blocks where numerical instabilities might occur.
-  – Build a “watchdog” within the simulation loop that monitors physical values (e.g., extremely high forces) and flags errors without crashing the simulation.
+  – Display clear, user-friendly error messages when invalid data is provided (e.g., missing fields, invalid numeric input).  
+ • Data Validation:  
+  – Implement both client-side validation (for immediate feedback) and server-side validation (for security and data integrity).  
+ • Audit and Change History (Optional):  
+  – Optionally maintain an audit log for transactions to record creation, edits, and deletions.
 
-4.4 Performance and Optimization
- • Profiling:  
-  – Regularly utilize Python profiling tools (cProfile, timeit) to identify hot spots in physics calculations and rendering.
-  – Consider optimizing critical loops in Cython or using numpy for vectorized operations if performance falters.
- • Algorithmic Efficiency:  
-  – For large numbers of bodies, consider exploring optimization strategies, such as spatial partitioning (e.g., quad-trees), to reduce the number of pairwise force calculations.
-  – Provide a simulation mode that can switch between “accurate” and “performance” settings, allowing users to trade-off between physics precision and speed.
+─────────────────────────────  
+3. Nonfunctional Requirements  
+─────────────────────────────
 
-4.5 Testing Strategy
- • Unit Testing:  
-  – Write tests for individual modules (e.g., force computation, integration methods, configuration parsing).
- • Integration Testing:  
-  – Develop end-to-end simulation scenarios using sample configuration files, ensuring that outputs, visualization, and user controls work in harmony.
- • Performance Testing:  
-  – Implement benchmark tests that simulate increasing numbers of bodies to ensure the system meets FPS and responsiveness targets.
- • Usability Testing:  
-  – Ensure that the GUI is responsive, intuitive, and provides clear feedback through both automated tests (where possible) and user trials.
+A. Usability and Interface  
+ • NFR1. Responsive and Intuitive UI:  
+  – The user interface must be easy to use and work seamlessly on desktop and mobile devices.  
+ • NFR2. Clear Visual Differentiation:  
+  – Use color coding and clear labeling to differentiate income versus expenses and to highlight different categories.
 
-──────────────────────────────
-5. ADDITIONAL CONSIDERATIONS
+B. Performance  
+ • NFR3. Efficiency:  
+  – Under typical operation (e.g., several thousand transactions), all query and visualization operations should complete within defined thresholds (e.g., standard queries returning within a few seconds).  
+  – Specify measurable targets for individual operations, including both average and worst-case scenarios.
+ • NFR4. Batch Processing:  
+  – Batch operations (like year-end summaries) for datasets up to N records should complete within preset performance limits (for instance, within a minute on a modern workstation with 8GB RAM).
 
-5.1 Error Management and Robustness
- • Numerical Instability:  
-  – Detect cases such as overlapping bodies that might lead to divide-by-zero or infinite forces. Introduce minimum distance thresholds or clamping.
-  – Provide users with error messages or warnings, suggesting configuration changes.
- • Invalid Configuration:  
-  – Implement validation routines for configuration files; if issues are found, notify the user with clear instructions for remediation or automatically fall back to default values.
+C. Portability and Accessibility  
+ • NFR5. Web Deployment:  
+  – Application is delivered as a web-based solution with future scope for mobile adaptations.  
+ • NFR6. Accessibility:  
+  – Adhere to accessibility guidelines (e.g., proper color contrast, screen-reader support, keyboard navigation).
 
-5.2 Extensibility and Future Enhancements
- • Modular Design:  
-  – Design the physics engine to be easily extended with new forces (e.g., drag, electromagnetic forces) or even collision detection.
- • User Extensions:  
-  – Provide “hooks” or plugin-like interfaces so that new body types or visual styles can be added with minimal changes to the core.
+D. Security and Data Integrity  
+ • NFR7. Secure Data Handling:  
+  – Encrypt personal financial data in storage (encryption at rest) and enforce secure communication over HTTPS.  
+ • NFR8. Backup and Recovery:  
+  – Implement backup routines and a recovery process to safeguard user data.
+ • NFR9. Audit Logs:  
+  – Optionally maintain detailed logs of data modifications for accountability and for aiding dispute resolution.
 
-5.3 User Customization and Documentation
- • In-App Settings:  
-  – Allow users to customize visual aspects (such as zoom levels, color schemes for bodies) via the GUI.
- • Documentation:  
-  – Provide in-app help, tooltips, and a detailed user manual covering configuration file structure, simulation controls, and troubleshooting steps.
+E. Technical Environment Constraints  
+ • NFR10. Technology Versions and Compatibility:  
+  – Python version 3.8 or later must be used.  
+  – SQLite3’s latest stable release is required.  
+  – Ensure compatibility of Pandas and Matplotlib by periodically reviewing library versions.
+ • NFR11. Resource Management:  
+  – Monitor memory usage and optimize data processing (e.g., by chunking data operations with Pandas) to avoid performance degradation with larger datasets.
 
-──────────────────────────────
-6. CONCLUSION
+─────────────────────────────  
+4. System Design Recommendations  
+─────────────────────────────
 
-This specification outlines a clear set of functional and non‑functional requirements and system design recommendations for the 2D Newtonian N-body simulation. By adhering to these guidelines, the development team can deliver a robust, maintainable, and extensible simulation that meets real‑time performance targets and provides intuitive user interactions. The emphasis on modularity, error handling, and performance optimization ensures that the simulation will be both usable and adaptable to future enhancements.
+A. Modular Architecture  
+ • Divide the application into clearly defined modules:
+  – Data Layer: Responsible for interacting with SQLite (using an ORM or raw SQL as necessary).
+  – Business Logic Layer: Handles transaction processing, categorization, aggregation functions, and report generation.
+  – Presentation Layer: Implements the web interface. If appropriate, employ a modern frontend framework (e.g., React, Vue.js) that communicates with the backend via REST APIs.
+  – Visualization Module: Isolate components for generating charts using libraries like Matplotlib or web-based chart libraries (e.g., Chart.js) if interactive features are prioritized.
 
-Developers are encouraged to maintain an agile approach, iteratively validating each module against performance benchmarks and user feedback while keeping documentation up to date.
+B. Data Flow and Processing  
+ • Data Retrieval:  
+  – Use efficient queries and indexes on frequently filtered columns (e.g., date, category) to speed up data retrieval.
+ • Data Transformation:  
+  – Leverage Pandas for aggregations and transformations used in monthly/yearly summaries. Consider chunk processing or caching results for heavy queries.
+ • Visualization Generation:  
+  – Optimize Matplotlib rendering by pre-generating static images when dynamic interactivity is not required, or use client-side charting libraries (if needed) for enhanced interactivity.
+
+C. API Design and Integration  
+ • RESTful API:  
+  – Expose endpoints for CRUD operations on transactions and categories.
+  – Provide endpoints to fetch summary reports and visualization data in JSON format.
+ • Configuration Driven:  
+  – Utilize configuration files (such as config.json) to manage environmental variables (database credentials, server ports, chart defaults) for easier deployment and testing.
+
+D. Error Handling and Logging  
+ • Implement robust error-handling mechanisms in both client and server layers.
+ • Include detailed logging (with configurable log levels) to record errors, performance metrics, and audit trail events.
+ • Ensure that error messages are user-friendly, while detailed technical logs are available for troubleshooting.
+
+E. Scalability Considerations  
+ • Although SQLite3 is suitable for small-to-medium datasets, design the data access layer to be easily migratable to a more powerful DBMS (e.g., PostgreSQL) if the application scales.
+ • Plan for future enhancements like recurring transactions or multi-currency support by using a flexible data model.
+
+─────────────────────────────  
+5. Configuration and Environment Setup  
+─────────────────────────────
+
+A. Configuration Files  
+ • Provide a JSON configuration file (e.g., config.json) detailing:
+  – Database credentials and connection parameters.
+  – Server settings such as port and environment mode.
+  – Chart configurations (default types and supported chart types).
+  – Report settings indicating which summaries are active and supported export formats.
+  
+Example (config.json):
+--------------------------------------------------
+{
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "username": "your_db_user",
+    "password": "your_db_password",
+    "database": "budget_planner_db"
+  },
+  "server": {
+    "port": 3000,
+    "environment": "development"
+  },
+  "charts": {
+    "defaultType": "bar", 
+    "supportedTypes": ["bar", "pie"]
+  },
+  "reports": {
+    "monthly": true,
+    "yearly": true,
+    "exportFormats": ["pdf", "csv"]
+  }
+}
+--------------------------------------------------
+
+B. Build and Dependency Management  
+ • For a Python-based backend, use dependency management tools (e.g., pip and requirements.txt or Poetry).
+ • If applicable, maintain a package.json file for any frontend dependencies.
+ • Ensure that Continuous Integration (CI) scripts incorporate configuration checks and environment-specific tests.
+
+─────────────────────────────  
+6. Testing and Performance Considerations  
+─────────────────────────────
+
+A. Unit and Integration Testing  
+ • Write tests for each functional module, covering transaction CRUD operations, category management, and report generation.
+ • Validate both client-side and server-side validations.
+
+B. Performance Testing  
+ • Define measurable targets (e.g., single queries should return within X seconds; batch processing for up to N records within Y seconds).
+ • Incorporate performance benchmarks using representative datasets.
+ • Integrate stress testing into the CI pipeline to detect performance regressions, particularly in data retrieval and aggregation stages.
+
+C. Profiling and Logging  
+ • Use profiling tools to monitor resource usage (memory and CPU) during data processing with Pandas and chart rendering with Matplotlib.
+ • Implement logging to record performance metrics and alert on deviations from target response times.
+
+─────────────────────────────  
+7. Traceability and Iterative Development  
+─────────────────────────────
+
+A. Traceability  
+ • Link each functional requirement (FR1–FR12) to specific design modules and test cases.
+ • Maintain documentation that maps user stories to development tasks and tests to ensure full coverage.
+
+B. Iterative Delivery  
+ • Begin with core modules such as transaction management and basic categorization.
+ • Extend functionality iteratively (adding reporting, visualizations, and export features) while continually verifying performance and usability.
+ • Plan regular reviews to assess alignment with the refined nonfunctional requirements and environmental constraints.
+
+─────────────────────────────  
+Conclusion  
+─────────────────────────────
+
+This detailed specification outlines a modular, performance-conscious design for a Personal Budget Planner application. It incorporates:
+  – Clearly defined functional requirements (transaction management, categorization, reporting, visualization).
+  – Nonfunctional requirements covering usability, performance, security, and accessibility.
+  – System design recommendations that emphasize modular architecture, efficient data processing, robust error handling, and future scalability.
+  – Configuration and environment setup details that will facilitate deployment and maintenance.
+  – A plan for traceability and iterative development ensuring that all refinements and performance targets are continuously met.
+
+Following these specifications will support the creation of a maintainable, secure, and high-performance application that meets users’ needs and provides clear, actionable insights into their personal finances.
