@@ -5,12 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b3e9d9ef-b601-49c9-aba3-7ff958a4f7c6" name="Changes" comment="New code_gen_agent.py">
-      <change beforePath="$PROJECT_DIR$/outputs/generated_codebase.txt" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/generated_codebase.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/outputs/generated_codebase.zip" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/generated_codebase.zip" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/outputs/refined_environment.txt" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/refined_environment.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/outputs/refined_goals.txt" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/refined_goals.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/outputs/system_architecture.txt" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/system_architecture.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/outputs/system_specifications.txt" beforeDir="false" afterPath="$PROJECT_DIR$/outputs/system_specifications.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,7 +30,7 @@
 }</component>
   <component name="GithubPullRequestsUISettings"><![CDATA[{
   "selectedUrlAndAccountId": {
-    "url": "https://github.com/PatrickZint/python_2D_orbit_sim_openAi_o3_mini",
+    "url": "https://github.com/PatrickZint/python_2D_NBody_orbit_sim_openAi_o3_mini",
     "accountId": "d8a77ed2-0d78-4a11-bd5a-0ed55ea1a46c"
   }
 }]]></component>

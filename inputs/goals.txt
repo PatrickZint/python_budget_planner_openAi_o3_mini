@@ -1,5 +1,6 @@
-Build a simple 2D orbital simulator for two celestial bodies using Newtonian physics.
+Build a basic N-body simulation in 2D to model gravitational interactions between multiple planets using Newtonian physics.
 Features:
 - Calculate gravitational forces, velocities, and positions
 - Output the forces and positions at each time step
 - 2D visualization in a GUI window
+- Dynamically handle any number of celestial bodies
