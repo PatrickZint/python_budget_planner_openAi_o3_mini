@@ -1,179 +1,122 @@
-Below is a high-level system architecture for the lightweight news reader application. This design details the component organization using an MVC-like pattern, outlines component responsibilities, and identifies a supporting technology stack.
+Below is a high-level system architecture for the 2D orbital simulator that meets both the detailed functional and non‐functional requirements. This design decomposes the system into three main layers with clearly separated responsibilities, while selecting a technology stack that leverages Python’s rich numerical and visualization libraries.
 
-─────────────────────────────  
-1. OVERALL ARCHITECTURE  
-─────────────────────────────
+──────────────────────────────
+1. Overall Architectural Layers
 
-The application is structured using a Model-View-Controller (MVC) pattern to promote separation of concerns and ease future enhancements. The three major layers include:
+A. Core Simulation Engine Layer  
+ • Responsibility:  
+  – Implements Newtonian physics, gravitational force computations, kinematic updating, and configurable numerical integration (e.g., Euler method or a higher-order method).  
+  – Manages simulation timing and error detection (e.g., warnings on unstable simulation behavior).  
+ • Features:  
+  – Encapsulated “physics engine” module that can operate in “batch” mode for logging and file exports, as well as integrated with visualization when needed.  
+  – Fully decoupled from the user I/O and visualization modules to allow for independent testing and future extension (such as adding multi-body or 3D support).
 
-• Model:  
- – Encapsulates business logic, data structures, and API communication.  
- – Responsible for fetching, caching, and transforming news data from the external news API.  
+B. Data I/O Layer  
+ • Responsibility:  
+  – Handles input validation, configuration parsing (e.g., command-line flags or configuration files defined in JSON/YAML), and logging.  
+  – Exports simulation results (positions, velocities, forces over time) to multiple formats such as CSV, JSON, or standard output.  
+ • Features:  
+  – Configurable verbosity levels to control the log details (from basic state variables to full computation trace).  
+  – Use of Python’s logging module for structured logging and audit trails.
 
-• View:  
- – Built using Tkinter and responsible for all UI rendering and layout management.  
- – Manages two main UI screens: the Home Screen (listing headlines) and the Detailed Article View.  
+C. Visualization Layer  
+ • Responsibility:  
+  – Provides both static plots and animated, interactive 2D visualization of the celestial bodies’ trajectories using Matplotlib.  
+  – Optionally allows for interactive controls (pause/resume, speed adjustment) – either implemented as simple command-line key commands or a minimal GUI.  
+ • Features:  
+  – Clearly labeled axes, legends, distinct marker colors, and scaling controls for intuitive user experience.  
+  – Isolation from the core simulation allows the visualization to be optionally enabled without impacting computational performance.
 
-• Controller:  
- – Acts as an intermediary between the Model and the View.  
- – Handles user input (refresh requests, headline clicks), initiates API calls, processes responses, and triggers view updates.  
- – Implements error handling routines and triggers loading indicators.
+──────────────────────────────
+2. Component Design Overview
 
-─────────────────────────────  
-2. COMPONENT DESIGN  
-─────────────────────────────
-
-A. API Handler Module  
- • Role:  
-  – Encapsulate all API communication details.  
-  – Manage secure storage and use of the API key.  
-  – Offer synchronous/asynchronous data fetching methods.  
+A. Simulation Engine Module  
  • Components:  
-  – API connector functions (using the Python requests library)  
-  – Error detection (checking HTTP status codes, handling network errors)  
-  – Retry and fallback logic for intermittent network issues  
- • Technology:  
-  – Python requests library for HTTP calls.  
-  – Optional: asyncio or threading module to avoid UI blocking.
+  1. Physics Calculator  
+   – Computes gravitational forces using F = G·(m₁*m₂)/r² with proper 2D vector handling.  
+   – Computes accelerations (a = F/m) and supports multiple integration strategies (e.g., Euler and potential higher-order methods).  
+  2. Integrator  
+   – Provides configurable time stepping and numerical integration routines.  
+   – Monitors simulation conditions and issues warnings if numerical divergence or instability is detected.  
+  3. Time-Step Manager  
+   – Manages simulation iterations using user-specified time-step size and total simulation duration.
 
-B. Model Layer  
- • Role:  
-  – Define data models (e.g., Headline, NewsArticle) and business logic.  
-  – Perform any necessary data transformation before sending it to the view.  
+B. Data I/O Module  
  • Components:  
-  – Data classes or objects modeling news data  
-  – Caching mechanism (in-memory cache using Python dictionaries, possibly disk-based caching for persistence in future enhancements)  
- • Technology:  
-  – Python’s dataclass module (if applicable) for model representation.
+  1. Configuration Parser  
+   – Uses libraries such as argparse (for command-line) or a JSON/YAML parser for file configuration.  
+   – Validates inputs such as initial conditions, masses, time-step, and simulation duration.  
+  2. Logger  
+   – Employs Python’s logging module to log simulation events, error conditions, and state variables for debugging and audit logging.  
+   – Provides options to export output in CSV or JSON formats, and supports different levels of verbosity.
 
-C. View Layer (Tkinter UI)  
- • Role:  
-  – Render a minimal and lightweight UI.  
-  – Present a scrollable list for headlines, a separate detailed view, and common interactive elements (buttons for refresh, navigation, etc.).  
+C. Visualization Module  
  • Components:  
-  – Main window and Tkinter Frames segregating the Home Screen and Detailed Screen.  
-  – Widgets: Listbox (or custom widget) for headlines, Labels for text, Button for refresh control, and hyperlink controls for external article viewing.  
-  – Loading indicators (spinners or progress bars) integrated within the UI during API calls.  
- • Technology:  
-  – Python Tkinter as the primary UI toolkit.  
-  – Tkinter’s Frame, Label, Button, Listbox, and possibly Canvas for more graphical detail.
+  1. Plot Manager  
+   – Uses Matplotlib to produce static trajectory plots and animated simulations.  
+   – Implements clear labeling (axes, legends) and marker differentiation for the bodies.  
+  2. User Interaction Controller  
+   – Optionally integrates interactive controls (e.g., pausing/resuming and adjusting simulation speed).  
+   – Could use Matplotlib’s interactive backends or minimal GUI elements (e.g., Tkinter) if needed.
 
-D. Controller Layer  
- • Role:  
-  – Bridge user interactions and business logic.  
-  – Listen to UI events (e.g., clicking a headline, tapping refresh) and invoke model functions accordingly.  
-  – Manage state transitions between the headline list and detailed view.  
-  – Coordinate error handling and feedback messaging to the user.  
- • Components:  
-  – Event handling functions for UI interactions  
-  – Navigation logic to switch between views  
-  – Global exception handler that logs errors and displays user-friendly messages  
- • Technology:  
-  – Implemented in standard Python logic and modules.
+──────────────────────────────
+3. Technology Stack Selection
 
-E. Security & Configuration Module  
- • Role:  
-  – Manage sensitive data (API keys, tokens) and secure configuration settings.  
-  – Encrypt sensitive runtime/configuration data at rest.  
- • Components:  
-  – Configuration file parser to load settings (e.g., using configparser)  
-  – Encryption routines using Python’s cryptography library (AES-256 recommended)  
- • Technology:  
-  – Python’s cryptography module  
-  – Secure storage practices (avoiding hard-coded keys, possibly using environment variables).
+• Primary Language: Python  
+ – Advantages: Wide availability of scientific computing libraries, ease of prototyping, and readability.  
+ – Best Practices: Use virtual environments and dependency managers (pip or Poetry) to manage packages.
 
-─────────────────────────────  
-3. DATA FLOW & INTERACTION  
-─────────────────────────────
+• Numerical Computation: NumPy  
+ – Purpose: For efficient vectorized operations and matrix math during physics calculations.  
+ – Benefit: Improved performance (target <200ms per simulation step) even under interactive simulation conditions.
 
-1. On application launch, the Controller triggers the Model to perform an API call via the API Handler.  
-2. Asynchronous or threaded API calls ensure that the UI remains responsive.  
-3. The Model receives the JSON response, performs any needed parsing and data transformation, and then passes the data to the Controller.  
-4. The Controller instructs the View to update the headlines list.  
-5. When a user clicks/taps a headline, the Controller fetches the corresponding detailed data from the Model and directs the View to display the detailed article view.  
-6. Error handling is integrated at each step, with the Controller catching exceptions and routing error messages to the View (e.g., “Unable to retrieve news. Please try again later.”).
+• Advanced Integration (Optional): SciPy  
+ – Purpose: To offer more accurate and advanced numerical integration methods if needed.  
+ – Benefit: Allows switching from simple Euler integration to higher-order methods on demand.
 
-─────────────────────────────  
-4. TECHNOLOGY STACK SELECTION  
-─────────────────────────────
+• Visualization: Matplotlib  
+ – Purpose: Rendering 2D plots and animations of orbital trajectories.  
+ – Benefit: High configurability for both static plot outputs and interactive displays with built-in interactivity features.
 
-• Programming Language:  
- – Python 3.9+ (latest compatible version)
+• Configuration and Logging:  
+ – argparse for command-line arguments and JSON/YAML libraries for configuration files.  
+ – Python’s logging module for structured and audit logging.
 
-• User Interface:  
- – Tkinter (builtin Python library)  
- – Tkinter widgets for layout (Frames, Labels, Buttons, Listbox)
+──────────────────────────────
+4. Interaction Flow Summary
 
-• Network and API Integration:  
- – Requests library for making HTTP/HTTPS calls  
- – Optional: Asyncio or threading modules for asynchronous network operations
+Step 1: Input and Configuration  
+ • The user supplies initial conditions and simulation parameters (via command-line or a configuration file).  
+ • The Configuration Parser validates inputs.
 
-• Security & Encryption:  
- – Python cryptography library (for AES-256 encryption of sensitive configuration)  
- – Use OS-level secure storage if available for secret management
+Step 2: Simulation Engine Execution  
+ • The Physics Calculator computes forces, accelerations, and positions using the chosen numerical integrator.  
+ • The Time-Step Manager iterates over the simulation duration and monitors potential numerical issues.
 
-• Data Modeling & Parsing:  
- – Native Python data structures  
- – Data classes (from Python’s dataclasses module) for explicit models
+Step 3: Data I/O Operations  
+ • After each time step (or in batches), the simulation state is logged at the configured verbosity level through the Logger.  
+ • Outputs are exported to CSV or JSON formats as required.
 
-• Testing and Development:  
- – Unit testing frameworks: unittest or pytest  
- – Continuous integration tools (e.g., GitHub Actions, Travis CI) for automated testing, security linting, and performance benchmarking
+Step 4: Visualization (Optional)  
+ • If visualization is enabled, the Plot Manager captures simulation data in real time to produce animated plots.  
+ • The User Interaction Controller allows users to pause or adjust simulation speed on the fly.
 
-• Version Control & Dependency Management:  
- – Git for source code management  
- – requirements.txt or Pipenv for dependency version pinning
+──────────────────────────────
+5. Modularity and Extensibility Considerations
 
-─────────────────────────────  
-5. CROSS-PLATFORM & PERFORMANCE CONSIDERATIONS  
-─────────────────────────────
+• Loose Coupling:  
+ – Each module (simulation, I/O, visualization) communicates via well-defined interfaces (e.g., data objects that represent state at each time step).  
+ – This makes it straightforward to replace the numerical integrator or extend the simulation engine to include more bodies or a third dimension later on.
 
-• Cross-Platform Compatibility:  
- – Tkinter supports Windows, macOS, and Linux. Develop and test on all target platforms (e.g., Windows 10/11, macOS 11+, Ubuntu 20.04 LTS).  
+• Testability:  
+ – Unit tests should be implemented for the physics calculations (e.g., verifying gravitational force and kinematics outcomes) using known physical scenarios such as circular or elliptical orbits.  
+ – Integration tests can validate that configuration inputs lead to expected simulation behavior.
 
-• Performance Optimizations:  
- – Profile startup and interaction times with tools like cProfile to ensure UI initialization under 2 seconds and API responses within 3 seconds.  
- – Use threading/async operations to keep UI interactions within 200 milliseconds.  
- – Minimize CPU and memory usage (target under 100 MB memory footprint) with efficient coding practices and careful resource management.
+• Security:  
+ – Input validation routines are in place to check user-supplied values.  
+ – Secure coding practices following OWASP and industry standards ensure robustness even as the system evolves.
 
-─────────────────────────────  
-6. DEVELOPMENT, MAINTENANCE & SCALABILITY  
-─────────────────────────────
+──────────────────────────────
+6. Conclusion
 
-• Modular Codebase:  
- – Each major component (API, Model, View, Controller) is implemented in separate modules/packages.  
- – Documentation is included within the code and external developer guides.  
-
-• Future Enhancements:  
- – The modular design allows for easy integration of new features (user preferences, search functionality, additional news sources).  
-
-• Security & Error Auditing:  
- – Regular security audits and automated vulnerability scans are integrated into the CI/CD pipeline.  
- – Logging is implemented (ensuring sensitive data is sanitized) to assist in post-mortem debugging.
-
-─────────────────────────────  
-7. SUMMARY DIAGRAM (Textual Representation)  
-─────────────────────────────
-
-           [Application Entry Point]
-                     |
-          -------------------------
-          |         Controller    |
-          -------------------------
-                /            \
-   [Model (Business Logic)]   [View (Tkinter UI)]
-          |     \
-          |      \----> [API Handler Module]
-          |               | (Requests, Async/Threading)
-          |               v
-          |       [Public News API]
-          |
-          v
-   [Configuration & Security Module]
-   (Encryption, API Key Management)
-
-─────────────────────────────  
-8. CONCLUSION  
-─────────────────────────────
-
-This high-level system architecture meets the specifications by cleanly separating concerns through an MVC pattern, ensuring efficient API integration, responsive UI updates, and robust error handling. The selected technology stack—Python 3.9+, Tkinter, requests, and cryptography—provides a solid, maintainable foundation that satisfies both functional and non-functional requirements while ensuring scalability and security.
+This high-level architecture clearly delineates the responsibilities into a Core Simulation Engine, Data I/O, and Visualization layer. Using Python, NumPy, and Matplotlib ensures that the simulator meets performance (sub-200ms simulation step), ease of use, and extensibility requirements while remaining modular enough to support future enhancements. Each module’s clear boundaries allow for independent development, testing, and future scalability—fulfilling all specified functional and non‐functional requirements.
