@@ -1,127 +1,206 @@
-Below is a detailed specification document that outlines functional requirements, non‐functional requirements, and system design recommendations for the 2D N-body simulation software. Each section is structured to address the refined goals and environmental constraints provided.
+Below is a detailed system specification document for the 3D gravitational simulation project. This document includes functional requirements, non‐functional requirements, and system design recommendations that comprehensively capture all of the refined goals and environment constraints.
 
-─────────────────────────────  
-1. Functional Requirements  
-─────────────────────────────
+────────────────────────────
+1. OVERVIEW
 
-A. Simulation Engine  
- • The system shall simulate gravitational interactions between multiple celestial bodies (e.g., planets, asteroids) in a two-dimensional space.  
- • The engine will compute gravitational forces between bodies using physics-based equations (e.g., Newton’s law of universal gravitation: F = G · m₁ · m₂ / r²), updating velocities and positions accordingly.  
- • The simulation engine shall support time-driven calculations with a configurable time step size.  
- • The engine must support adjustable simulation speed vs. numerical accuracy trade-offs.
+Project Description:  
+Develop an interactive software system to simulate gravitational interactions among celestial bodies in a three-dimensional environment. The system models orbital dynamics accurately, supports configurable collision handling (e.g., merge or bounce modes), provides real-time 3D visualization with interactive controls, and includes comprehensive data export capabilities. The application is to be implemented in Python (v3.8+), leveraging Numpy for numerical processing, VPython for visualization, and HDF5 (via h5py) for data storage, along with industry-standard security measures.
 
-B. Celestial Body Management  
- • The system shall allow users to define an arbitrary number of celestial bodies at configuration time.  
- • Each celestial body must have configurable properties including:  
-  – Unique identifier  
-  – Mass (must be a positive floating-point value)  
-  – Initial position (x, y coordinates within a defined realistic range)  
-  – Initial velocity (vector in 2D)  
- • The simulation shall validate input values (e.g., mass > 0, positions within acceptable bounds).  
- • The system shall support dynamic addition or removal of celestial bodies prior to simulation start (via configuration reload) to accommodate different simulation scenarios.
+────────────────────────────
+2. FUNCTIONAL REQUIREMENTS
 
-C. Numerical Integration Methods  
- • The engine shall implement at least three numerical integration methods using a strategy pattern for selection:  
-  – Euler integration (first-order method)  
-  – Verlet integration (symplectic integration to improve energy conservation, preferred for long-term simulations)  
-  – Runge-Kutta 4 (RK4) integration method for higher accuracy when needed  
- • Users must be able to select the integration method and configure numerical integration parameters (e.g., time step size) through configuration files or command-line parameters.  
- • The system should clearly document the trade-offs associated with time step size and integration method choices.
+A. Simulation Engine & Physics Modeling
 
-D. Configuration Management (Saving/Loading)  
- • The simulation shall support exporting the complete configuration to a JSON file that includes:  
-  – Global simulation parameters (gravitational constant, default time step, selected numerical integration method)  
-  – A list detailing each celestial body’s properties (unique ID, mass, initial position, velocity, etc.)  
- • The system shall support loading simulation settings from a JSON file.  
- • A versioned and well-documented JSON schema must be provided to ensure backward and forward compatibility.  
- • The configuration loader must perform robust input validation and provide descriptive error messages when configuration errors are detected.
+• Core Physics Model:
+  – Implement a Newtonian gravitational model (with future support for relativistic corrections if required).
+  – Each celestial body record will include properties such as mass, radius, position, and velocity.
+  – Time integration should be explicit, specifying one of the following methods:
+     • Runge-Kutta (e.g., RK4)
+     • Verlet Integration
+  – Ensure that the algorithms balance between high numerical fidelity and computational speed.
 
-E. User Interface and Visual Output  
- • The simulation front end (which may include a GUI or command-line based interface) shall display real-time simulation progress.  
- • The system shall provide options to pause, resume, and adjust non-critical simulation parameters at runtime (e.g., simulation speed).  
- • A simple 2D visual representation must be provided, either as a dynamic plot using Matplotlib or as logged output of the trajectories, to allow users to verify simulation behavior.
+• Configurable Simulation Parameters:
+  – Allow users to adjust the simulation time step, total duration, and precision/tolerance of numerical integration.
+  – Provide an interface (graphical or config file based) for initial condition setup, including:
+      • Number of bodies to simulate
+      • Individual body properties (mass, radius, position, velocity)
+      • Random or predefined placement options
 
-F. Traceability and Testing  
- • Each functional requirement must have corresponding test cases:  
-  – Validate that numerical integration methods produce expected trajectories for known test scenarios.  
-  – Verify proper handling of celestial body creation, validation, and dynamic configuration reloading.  
-  – Confirm that exporting and reloading JSON configuration preserves simulation state accurately.  
- • Acceptance criteria will include reproducibility of simulation behavior when a saved configuration is reloaded and clear pass/fail conditions for integration accuracy, performance metrics, and input validation.
+B. Collision Detection & Resolution
 
-─────────────────────────────  
-2. Non-Functional Requirements  
-─────────────────────────────
+• Collision Detection:
+  – Compute collisions using comparative distances between centers versus the sum of the bodies’ radii.
+  – Incorporate efficient data structures (e.g., spatial partitioning, bounding volume hierarchies) for scalable collision checks.
 
-A. Performance and Scalability  
- • The simulation software must maintain a response time (e.g., simulation update cycle) within defined limits (for interactive simulations, aim for an update within 500 milliseconds in 95% of cases).  
- • Benchmark tests shall be conducted to document behavior when scaling to large numbers of celestial bodies, with guidelines on memory and CPU usage.  
- • The system must provide performance profiling to identify bottlenecks, particularly when running extended simulations or high-resolution integrations.
- • Guidelines will be provided for recommended hardware configurations and maximum supported simulation sizes (e.g., handling up to several hundred bodies on modest hardware).
+• Collision Resolution Modes:
+  – Merge Mode:
+      • When two bodies collide, merge them into a single body.
+      • Conserve total mass, momentum, and where applicable, energy.
+  – Bounce Mode:
+      • Process collisions using elastic dynamics or allow user-defined inelastic parameters (i.e., coefficient of restitution).
+  – Provide a UI element or configuration setting to select and parameterize the collision mode.
 
-B. Security  
- • The system must adhere to secure coding practices (e.g., as prescribed by OWASP standards), ensuring that:  
-  – Sensitive settings or configurations are stored with appropriate access control.  
-  – Input (e.g., JSON configuration files) is sanitized and validated to mitigate injection attacks or data tampering.  
-  – Any logging or audit trails do not expose sensitive data.
- • If the system exposes any networked components (e.g., a web-based UI), secure authentication and authorization mechanisms must be implemented.
- • Configuration files and data in transit should, if applicable, be encrypted using well-vetted cryptographic libraries.
+C. Data Export
 
-C. Technology Stack Constraints  
- • The software is to be developed in Python (version 3.8 or above) ensuring compatibility with modern language features.  
- • Numerical operations shall be implemented using NumPy, ensuring correct handling of large arrays and optimized performance.  
- • For visualizations and plotting, the system shall use Matplotlib with consideration given to rendering performance and interactivity.  
- • Dependency and version management will be handled using virtual environment tools (virtualenv, conda) or Docker containers to ensure reproducibility.
+• Simulation Logging:
+  – Record simulation state (positions, velocities, accelerations, energies, etc.) at a configurable logging frequency (e.g., every simulation tick or at user-defined intervals).
+  
+• Data Format Support:
+  – Provide exports in:
+      • CSV format – for quick reviews and integrations with other tools.
+      • HDF5 format – for efficient storage, metadata inclusion, and handling large datasets.
+  – Include metadata such as simulation start time, configuration settings, and units.
 
-D. Reliability and Maintainability  
- • The system shall be modular, with clear separation between simulation logic, configuration management, and the user interface.  
- • All code shall be accompanied by unit tests, integration tests, and performance tests, facilitating automated testing and future refactoring.  
- • Documentation (in-code and external) must detail assumptions, performance constraints, and security practices to support maintenance and future contributions.
- • The platform must be easy to extend (e.g., for adding collision detection, relativistic corrections), which will be achieved by following a modular architecture and design patterns.
+D. Interactive 3D Visualization
 
-─────────────────────────────  
-3. System Design Recommendations  
-─────────────────────────────
+• 3D Viewport Implementation:
+  – Provide a real-time interactive view using VPython.
+  – Support common camera operations:
+      • Pan, zoom, and rotation
+      • Playback controls, including start, pause, step-through, restart, and speed adjustment
+  – Enable selection of individual celestial bodies to display properties (current velocity, mass, etc.) along with the ability to display trajectory trails.
 
-A. Architectural Overview  
- • Employ a layered architecture to isolate concerns:
-  1. Simulation Core Layer:  
-   – Contains the physics engine and numerical integration implementations.  
-   – Uses a strategy pattern to allow easy swapping between Euler, Verlet, and RK4 integrators.
-  2. Configuration Manager:  
-   – Handles JSON schema validation, loading, and saving of simulation settings.  
-   – Ensures backward and forward compatibility via versioned JSON schemas.
-  3. User Interface Layer:  
-   – Provides either a GUI (possibly using a lightweight UI toolkit) or a command-line interface.  
-   – Responsible for rendering simulation state (via Matplotlib) and interacting with the user for actions such as pausing/resuming.
-  4. Testing and Validation Module:  
-   – Includes unit tests, integration tests, and performance benchmarks.
-   – Manages automated testing using frameworks like pytest.
+• Visual Differentiation:
+  – Employ visual markers such as colors, sizes, and optional trails to distinguish different bodies.
+  – Optionally, include visual aids (e.g., axes, grid) to help orientation within the 3D space.
 
-B. Design Patterns and Modularity  
- • Integration Method Strategy: Define a common interface for integration methods so that new numerical algorithms can be added as plug-ins.  
- • MVC or MVVM Pattern: If a GUI is implemented, use these patterns to separate domain logic from presentation.  
- • Dependency Injection: Facilitate testing by injecting simulation parameters and mocking external dependencies (e.g., file system interactions for configuration loading).
+────────────────────────────
+3. NON-FUNCTIONAL REQUIREMENTS
 
-C. Data Flow and Module Interaction  
- • The simulation begins with configuration loading. The Configuration Manager component reads a JSON file, validates its structure against the JSON schema, and instantiates celestial body objects along with global parameters.  
- • The Simulation Core reads these parameters and selects the appropriate numerical integration strategy.  
- • During simulation runtime, the core computation updates body states, while the UI layer periodically requests state snapshots to display trajectories.  
- • Logging and error handling components capture any validation errors, simulation exceptions, or performance warnings.
+A. Performance & Scalability
 
-D. Environment and Dependency Management  
- • Specify a requirements.txt (or equivalent) containing specific versions of Python packages (e.g., NumPy, Matplotlib) to ensure consistency across environments.  
- • Consider employing Docker for containerized deployment, encapsulating all dependencies and environment specifics.
- • Document performance benchmarks and recommended hardware requirements in the user and deployment manuals.
+• Simulation Performance:
+  – Ensure real-time performance of the visualization module even with a realistic number of bodies (target: 50–100 bodies).
+  – Optimize critical routines using Numpy, and if necessary, employ multi-threading or multiprocessing (with attention to Python’s GIL).
+  – Document and adhere to benchmarks:
+      • Operations (e.g., gravitational calculations) should complete within defined milliseconds.
+      • Memory usage should be controlled (e.g., X MB per process).
+  
+• Collision Detection Scalability:
+  – Utilize spatial partitioning (quad/octrees or BVHs) to ensure performance scales with larger numbers of bodies.
+    
+B. Usability
 
-E. Testing and Continuous Integration  
- • Implement unit tests for:  
-  – Individual physics calculations and integration method outputs.  
-  – Input validation logic for celestial body parameters and the configuration loader.  
- • Develop integration tests that simulate known scenarios and compare output trajectories against expected results.  
- • Set up continuous integration (CI) pipelines to run tests automatically on code commits, ensuring that core functionality, security verifications, and performance benchmarks are consistently met.
+• User Interface:
+  – Provide an intuitive GUI and/or configuration file interface for:
+      • Simulation parameter entry (bodies, positions, velocities, masses)
+      • Collision handling mode and parameters
+      • Data export options
+  – Onscreen help and tooltips should explain key features and functionalities.
+  
+• Documentation:
+  – Supply clear user documentation covering installation, usage, and troubleshooting.
+  – Include developer documentation to facilitate future extensions (e.g., plugin development).
 
-─────────────────────────────  
-Conclusion  
-─────────────────────────────
+C. Reliability & Accuracy
 
-This specification provides a clear, actionable roadmap covering what the system should do (functional requirements), under what constraints it should operate (non-functional requirements), and how it should be designed to support scalability, security, and easy extensibility. With this detailed plan, the simulation software can be implemented in Python using NumPy and Matplotlib, structured in a modular fashion that supports rigorous testing and future enhancements.
+• Numerical Accuracy:
+  – Provide configuration options to balance computational speed with accuracy (e.g., integration tolerances).
+  – Incorporate robust error handling to flag potential instabilities or invalid input values.
+
+• Logging & Error Management:
+  – Log simulation events and errors with sufficient detail for debugging.
+  – Ensure simulation state consistency and graceful recovery from runtime exceptions.
+
+D. Extensibility
+
+• Modular Design:
+  – Architect the system to support future extensions such as:
+      • Additional physics models (e.g., alternative gravitational theories or additional forces)
+      • New collision resolution methods
+  – Support plugin frameworks or external configuration files to register and load new modules without codebase modification.
+
+────────────────────────────
+4. ENVIRONMENT AND SECURITY REQUIREMENTS
+
+A. Security
+
+• Authentication & Authorization:
+  – If remote access or multi-user support is implemented, adhere to OWASP guidelines for managing user credentials and session security.
+  
+• Data Security:
+  – Encrypt sensitive data in transit and at rest (e.g., secure HDF5 file access, use TLS for network interactions).
+  – Use environment variables and secure key management practices for configuration containing sensitive information.
+  
+• Security Best Practices:
+  – Conduct regular automated vulnerability scans and code reviews.
+  – Manage dependencies with controlled environments (virtualenv, Docker) to reduce potential vulnerabilities.
+
+B. Performance Targets (Additional Quantified Requirements)
+
+• The simulation core should process gravitational computations within a target threshold (e.g., each tick processed within N milliseconds).
+• Visual interactions (camera movements, playback commands) should have a response latency of no more than 150–250 milliseconds.
+• Memory consumption during heavy load should be profiled and maintained below specific thresholds (examples documented in performance benchmarks).
+
+C. Technology Stack Specifications
+
+• Python – Version 3.8 or higher.
+• Numpy – Version 1.21 or higher, for optimized numerical computations.
+• VPython – Ensure the version is tested for compatibility with target hardware to maintain real-time rendering.
+• HDF5 – Use h5py for interfacing with HDF5 files, with strategies defined for file indexing and chunking to optimize large dataset handling.
+• Dependency Management – Prefer virtual environments (e.g., virtualenv, pipenv) or containerization (Docker) to ensure consistent deployments.
+
+────────────────────────────
+5. SYSTEM DESIGN RECOMMENDATIONS
+
+A. Architectural Design
+
+• Modular Separation:
+  – Separate the simulation engine from the visualization subsystem.
+  – Decouple physics calculations (simulation loop) from I/O (data logging, export). Consider using an asynchronous queue system for logging events to avoid slowing down the simulation loop.
+
+• Layered Architecture:
+  – Core Simulation Layer: Implements physics, integration methods, and collision detection/resolution.
+  – Services Layer: Handles data export, logging, and security (encryption, secure file I/O).
+  – Presentation Layer: Provides interactive 3D visualization and user interface controls.
+
+• Event-Driven Architecture:
+  – Consider an event-driven model for handling user interactions (e.g., playback commands, adjusting simulation parameters) and simulation events (collision detections).
+
+B. Algorithmic Considerations
+
+• Numerical Solver Optimization:
+  – Profile the integration methods (e.g., Runge-Kutta, Verlet) and choose adaptive time stepping if necessary.
+  
+• Collision Detection:
+  – Integrate spatial partitioning techniques:
+      • Use octrees or uniform grids for 3D space partitioning to reduce the number of pairwise collision checks.
+  – Provide fallbacks to brute-force detection when the number of bodies is low.
+
+C. Visualization Design
+
+• Use VPython’s capabilities to maintain high rendering performance:
+  – Leverage hardware acceleration if available.
+  – Implement level-of-detail adjustments for distant objects or periods of high computational load.
+  
+• UI/Interaction Flow:
+  – Design a main dashboard with distinct panels for simulation view, simulation control (playback, speed adjustment), and parameter configuration.
+  – Consider a modular UI design should the application need to scale to more complex simulation controls in the future.
+
+D. Integration and Testing
+
+• Automated Testing:
+  – Develop test cases for individual components:
+      • Physics unit tests (verifying gravitational force and collision responses)
+      • Integration tests (ensuring simulation parameters are applied correctly)
+      • UI tests (validating user interaction responses)
+      • Performance tests (benchmarking processing speed and resource consumption)
+  
+• Code Review & Security Audits:
+  – Integrate automated vulnerability scanning tools.
+  – Establish a process for security audits and performance profiling before each major release.
+
+• Continuous Integration/Continuous Deployment (CI/CD):
+  – Set up CI/CD pipelines using containerized environments to ensure consistent dependency management and cross-platform compatibility.
+
+────────────────────────────
+6. CONCLUSION
+
+This system specification document sets forth clear, testable, and implementable requirements for the 3D gravitational simulation project. Key takeaways include:
+
+• A simulation engine that accurately models gravitational dynamics and supports configurable collision resolution.
+• Interactive 3D visualization with comprehensive user controls and data export capabilities.
+• Rigorous non-functional requirements addressing performance, usability, reliability, and security.
+• A modular, layered architectural design to ensure maintainability and extensibility while meeting the performance and security constraints.
+
+The detailed specification is intended to guide development, facilitate stakeholder communication, and serve as the basis for testing and validation throughout the project lifecycle.

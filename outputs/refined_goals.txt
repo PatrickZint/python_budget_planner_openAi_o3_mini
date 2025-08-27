@@ -1,79 +1,76 @@
-Below is an analysis of the original goals along with a refined set of requirements that make the intent and scope clearer, more actionable, and testable.
+Below is an analysis of the provided goals along with suggestions for refining and expanding the requirements to make them more precise, testable, and implementable.
 
-─────────────────────────────  
-1. Overall Simulation Objective
+────────────────────────────—
+1. OVERALL GOAL
 
-Original: “Develop a basic N-body simulation in 2D to model gravitational interactions between multiple planets.”
+Original Goal: “Create a 3D gravitational simulation with collision detection.”
 
-Refinement:
-• The system shall simulate gravitational interactions between multiple celestial bodies (planets, asteroids, etc.) in a two-dimensional space.
-• It shall model the dynamics of these bodies under mutual gravitational forces using physics-based equations.
-• The simulation should provide a clear visual representation and/or data outputs suitable for analysis.
+Refined Goal: Develop an interactive software system that simulates gravitational interactions among celestial bodies in a three-dimensional environment over time. The system should include accurate orbital dynamics, robust collision detection and resolution (with configurable outcomes), real-time 3D visualization, and data export capabilities.
 
-─────────────────────────────  
-2. Handling Celestial Bodies
+────────────────────────────—
+2. FUNCTIONAL REQUIREMENTS
 
-Original: “Dynamically handle any number of celestial bodies.”
+A. Simulation Engine and Physics Modeling  
+• Requirement: The simulation should compute gravitational interactions between bodies using a Newtonian gravitational model (or optionally support alternative models such as relativistic corrections).  
+  – Define:  
+   • Bodies have physical properties such as mass, radius, initial velocity, and position.  
+   • The gravitational force calculation and the time integration (e.g., using Runge-Kutta or Verlet integration) must be clearly specified.  
+• Requirement: Support adjustable simulation parameters including time step, simulation duration, and precision settings.
 
-Refinement:
-• The simulation must allow users to define and manipulate an arbitrary number of celestial bodies at configuration time, keeping in mind realistic performance limitations of the hardware.
-• Each celestial body shall have configurable properties such as mass, initial position (x, y coordinates), initial velocity, and unique identifier.
-• The system shall support dynamic addition or removal of bodies (if needed by the use case) prior to the simulation run or via reloading a configuration.
-• Validation constraints should be in place to ensure that the input values (e.g., mass must be positive, positions within a realistic range) are within acceptable limits.
+B. Collision Detection and Resolution  
+• Requirement: The system shall detect collisions between bodies based on their sizes (radii) and positions.  
+• Requirement: When a collision is detected, allow for at least two modes of collision handling:  
+  – Merge: Bodies combine into a single body, obeying conservation of mass, momentum, and optionally energy.  
+  – Bounce: Bodies react according to either elastic or configurable inelastic collision dynamics.  
+• Requirement: Provide user-selectable options for the collision handling mode and appropriate parameters (e.g., coefficient of restitution for bounces).
 
-─────────────────────────────  
-3. Numerical Integration Methods
+C. Data Export  
+• Requirement: The application shall record the simulation state over time (positions, velocities, acceleration, energy, etc.) and enable exports in CSV and HDF5 formats.  
+• Considerations:  
+  – Define the frequency of logging (e.g., every simulation tick, user-determined intervals).  
+  – Ensure that metadata (such as simulation start time, configuration options, units) is included in the export file.
 
-Original: “Implement numerical integration methods (Euler, Verlet, or Runge-Kutta).”
+D. Interactive 3D Visualization  
+• Requirement: Provide an interactive 3D viewport for real-time visualization of the simulation.  
+• Features:  
+  – Allow users to pan, zoom, and rotate the camera view.  
+  – Provide playback controls (start, pause, step-through, restart, and potentially adjust simulation speed).  
+  – Optionally support selecting individual bodies to inspect properties (like current velocity and mass) and/or trace their trajectory.
+• Requirement: Visualization should clearly differentiate bodies (e.g., colors, sizes) and optionally display trails or other indicators of movement.
 
-Refinement:
-• The simulation engine shall implement at least three numerical integration methods:
-  – Euler (first-order),
-  – Verlet (symplectic integration, preferred for energy conservation in long-term simulations), and
-  – Runge-Kutta (specifically RK4, when higher accuracy is required).
-• Users must be able to select the integration method at the start of the simulation via configuration.
-• Numerical integration parameters such as time step size shall be configurable and should be documented in the system settings.
-• The system must provide an option to adjust simulation speed versus accuracy trade-offs.
+────────────────────────────—
+3. NON-FUNCTIONAL REQUIREMENTS
 
-─────────────────────────────  
-4. Saving and Loading Simulation Settings
+A. Performance and Scalability  
+• Requirement: The software must efficiently support a realistic number of bodies (for instance, a minimum of 50–100 bodies) with real-time performance for the visualization component.  
+• Requirement: The collision detection algorithm must scale gracefully. Techniques such as spatial partitioning or bounding volume hierarchies might be needed to ensure performance as the number of objects increases.
 
-Original: “Save and load simulation settings from JSON.”
+B. Usability  
+• Requirement: Provide a user-friendly interface for simulation setup, including the ability to define initial conditions (e.g., number of bodies, positions, velocities, masses) and simulation parameters.  
+• Requirement: Documentation and on-screen help should be provided to explain how to operate the simulation and export data.
 
-Refinement:
-• The system shall support exporting the complete simulation configuration to a JSON file. This configuration includes:
-  – Global simulation parameters (e.g., gravitational constant, simulation time step, integration method selected).
-  – A list of all celestial bodies along with their initial conditions and properties.
-• The system shall allow loading a simulation configuration from a JSON file.
-• A well-defined JSON schema (with versioning information) must be established to ensure backward and forward compatibility.
-• The application should validate the JSON configuration at load time and provide descriptive error messages for any validation issues.
+C. Reliability and Accuracy  
+• Requirement: Accuracy in the gravitational and collision calculations should be maintained, with adjustable tolerances for numerical integration to allow users to balance between computational speed and simulation fidelity.  
+• Requirement: Robust error handling and logging should be incorporated so that invalid inputs or simulation instabilities are reported clearly.
 
-─────────────────────────────  
-5. Additional Considerations
+D. Extensibility  
+• Consider supporting plugin or configuration file approaches so that researchers or advanced users might extend the physics models (e.g., introducing additional forces or alternative collision handling models) without modifying the core system.
 
-• User Interface:  
-  – The simulation’s front end (GUI or command-line) should display simulation progress and potentially allow pausing, resuming, or adjusting parameters during runtime.
-  – A simple visual 2D representation (or log output) of the trajectories of the celestial bodies is required to help users verify the simulation behavior.
+────────────────────────────—
+4. ADDITIONAL CONSIDERATIONS
 
-• Performance and Scalability:  
-  – Provide performance benchmarks or guidelines that describe expected behavior when the number of celestial bodies increases.
-  – Consider memory and computational constraints, and document any limitations.
+• Testing: Define test cases for gravitational dynamics, collision events (both merge and bounce scenarios), data export correctness, and UI/interaction functionality.  
+• Configuration Management: Decide if the simulation settings will be saved persistently between sessions.  
+• Platform: Decide on target platforms (desktop, web) and consider hardware acceleration for 3D rendering (e.g., leveraging OpenGL, WebGL, or a game engine framework).
 
-• Extensibility:  
-  – The design should be modular to allow additional forces or physical phenomena (e.g., collisions, relativistic corrections) to be added in the future.
-  – Configuration management via JSON should be adaptable for new parameters without breaking existing simulation setups.
+────────────────────────────—
+5. SUMMARY
 
-─────────────────────────────  
-6. Traceability and Testing
+The refined requirements now clearly capture:
+– How the gravitational simulation should work, including physics models and numerical methods.
+– How collision detection is to be implemented and configured (with two distinct modes).
+– The specifics of data export formats and what simulation information should be retained.
+– The interactive 3D visualization features and controls expected.
+– Non-functional aspects such as performance, usability, reliability, and scalability.
 
-• Each requirement must be testable:  
-  – Validate that the numerical integration method produces reasonable and expected trajectories for known scenarios.
-  – Ensure that adding/removing celestial bodies works as intended.
-  – Verify that the saved JSON file contains all necessary settings and that loading the same file reproduces the simulation accurately.
-
-• Acceptance criteria should be defined for each high-level goal, giving clear pass/fail conditions during testing.
-
-─────────────────────────────  
-Conclusion
-
-By refining the original goals to include explicit details on simulation scope, celestial body management, numerical methods, configuration management, and additional considerations, we obtain a clearer picture of both the functional requirements and the non-functional constraints. This refined requirement set now supports traceability, testing, and possible future expansion of the simulation software.
+These refined requirements will help guide detailed design, implementation, and testing, ensuring that all stakeholders have a clear understanding of both the functionality and the constraints of the intended system.
