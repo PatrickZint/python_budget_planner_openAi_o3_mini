@@ -1,1 +1,2 @@
-Code a simple ToDo-List in Python. It should have a graphical user interface.
+Code a simple a lightweight news reader that fetches and displays top headlines from a public API.
+Features: Basic UI: List of news headlines on the home screen Tappable item to view full article details
