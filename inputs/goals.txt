@@ -1,3 +1,5 @@
-Code a simple a lightweight news reader that fetches and displays top headlines from a public API.
-The result should be a funkctional application with, so if necessary, create required config files.
-Features: Basic UI: List of news headlines on the home screen Tappable item to view full article details
+Build a simple 2D orbital simulator for two celestial bodies using Newtonian physics.
+Features:
+- Calculate gravitational forces, velocities, and positions
+- Output the forces and positions at each time step
+- 2D visualization
