@@ -1,138 +1,122 @@
-Below is a high-level system architecture design that meets the provided requirements. This design is broken down into layers and components, along with recommended technology selections. The design emphasizes separation of concerns, modularity, and maintainability.
+Below is a high-level system architecture for the 2D orbital simulator that meets both the detailed functional and non‐functional requirements. This design decomposes the system into three main layers with clearly separated responsibilities, while selecting a technology stack that leverages Python’s rich numerical and visualization libraries.
 
 ──────────────────────────────
-1. High-Level Architecture Overview
+1. Overall Architectural Layers
 
-The application follows a layered architecture with four main layers:
+A. Core Simulation Engine Layer  
+ • Responsibility:  
+  – Implements Newtonian physics, gravitational force computations, kinematic updating, and configurable numerical integration (e.g., Euler method or a higher-order method).  
+  – Manages simulation timing and error detection (e.g., warnings on unstable simulation behavior).  
+ • Features:  
+  – Encapsulated “physics engine” module that can operate in “batch” mode for logging and file exports, as well as integrated with visualization when needed.  
+  – Fully decoupled from the user I/O and visualization modules to allow for independent testing and future extension (such as adding multi-body or 3D support).
 
-• Presentation Layer (UI)  
- – Built using Python’s Tkinter library.  
- – Manages the home screen (news headlines list), detail view (full article), and user interactions (refresh, navigation, error notifications).  
+B. Data I/O Layer  
+ • Responsibility:  
+  – Handles input validation, configuration parsing (e.g., command-line flags or configuration files defined in JSON/YAML), and logging.  
+  – Exports simulation results (positions, velocities, forces over time) to multiple formats such as CSV, JSON, or standard output.  
+ • Features:  
+  – Configurable verbosity levels to control the log details (from basic state variables to full computation trace).  
+  – Use of Python’s logging module for structured logging and audit trails.
 
-• Business Logic Layer  
- – Orchestrates interactions between the UI and underlying data services.  
- – Contains use cases such as “fetch headlines,” “display article details,” and “handle auto-refresh.”  
- – Implements error handling, validation, and caching (if extended later).
-
-• Data Access Layer  
- – Handles networking via HTTP requests to the public news API using the Python requests library.  
- – Includes modules for parsing JSON responses and validation of received data.  
- – Uses synchronous calls for simplicity (with threading or asyncio options to avoid UI freeze).
-
-• Configuration Manager  
- – Loads and validates application settings (API endpoints/keys, refresh intervals, etc.) from an external file (JSON, YAML, or INI).  
- – Provides runtime configuration for all layers ensuring changes require no code modifications.
+C. Visualization Layer  
+ • Responsibility:  
+  – Provides both static plots and animated, interactive 2D visualization of the celestial bodies’ trajectories using Matplotlib.  
+  – Optionally allows for interactive controls (pause/resume, speed adjustment) – either implemented as simple command-line key commands or a minimal GUI.  
+ • Features:  
+  – Clearly labeled axes, legends, distinct marker colors, and scaling controls for intuitive user experience.  
+  – Isolation from the core simulation allows the visualization to be optionally enabled without impacting computational performance.
 
 ──────────────────────────────
-2. Component Design and Module Interactions
+2. Component Design Overview
 
-A. Presentation Components  
- 1. Main Window (Home Screen)  
-  – Component: Tkinter Frame/Window with a Listbox or Scrollable Frame to display headlines.  
-  – Displays a loading indicator (spinner/progress bar) during API calls.  
-  – Binds click events on list items to trigger detailed view navigation.  
+A. Simulation Engine Module  
+ • Components:  
+  1. Physics Calculator  
+   – Computes gravitational forces using F = G·(m₁*m₂)/r² with proper 2D vector handling.  
+   – Computes accelerations (a = F/m) and supports multiple integration strategies (e.g., Euler and potential higher-order methods).  
+  2. Integrator  
+   – Provides configurable time stepping and numerical integration routines.  
+   – Monitors simulation conditions and issues warnings if numerical divergence or instability is detected.  
+  3. Time-Step Manager  
+   – Manages simulation iterations using user-specified time-step size and total simulation duration.
 
- 2. Detail View  
-  – Component: Separate Frame/Window that shows full article content along with metadata (author, publication date, clickable link).  
-  – Provides a “Back” button to return to the home screen.  
+B. Data I/O Module  
+ • Components:  
+  1. Configuration Parser  
+   – Uses libraries such as argparse (for command-line) or a JSON/YAML parser for file configuration.  
+   – Validates inputs such as initial conditions, masses, time-step, and simulation duration.  
+  2. Logger  
+   – Employs Python’s logging module to log simulation events, error conditions, and state variables for debugging and audit logging.  
+   – Provides options to export output in CSV or JSON formats, and supports different levels of verbosity.
 
- 3. Notification and Error UI  
-  – Popup dialogs or inline message areas to inform users of network errors, missing content, or configuration issues.  
-
-B. Business Logic Components  
- 1. Controller/Presenter Module  
-  – Mediates user actions from the UI and invokes data fetching or navigation logic.  
-  – Manages flow control between fetching headlines and opening the detailed view.  
-
- 2. Refresh Manager  
-  – Implements on-demand and auto-refresh patterns.  
-  – Uses timers (or threading.Timer) to call the API at configurable intervals.
-
-C. Data Access Components  
- 1. API Service Module  
-  – Reads API endpoints and keys via the Configuration Manager.  
-  – Uses the Python requests library to make secure, TLS 1.2+ HTTP GET calls.  
-  – Parses JSON responses, verifies data integrity, and maps JSON structures to internal data objects.  
-  – Handles error states (timeouts, API key issues) and passes errors back to the Business Logic Layer.
-
-D. Configuration Manager  
- 1. Config Loader Module  
-  – Loads settings from an external configuration file (recommended: config.json for simplicity).  
-  – Parses the file, provides default values, and logs any issues with the configuration.  
-  – Offers an API for other modules to retrieve configuration parameters at runtime.
-
-E. Logging & Error Handling Infrastructure  
- 1. Logger Module  
-  – Uses Python’s built-in logging module to log errors, warnings, and info events.  
-  – Ensures logs include relevant timestamps and context without leaking sensitive information.  
-  – Supports log rotation if needed.
+C. Visualization Module  
+ • Components:  
+  1. Plot Manager  
+   – Uses Matplotlib to produce static trajectory plots and animated simulations.  
+   – Implements clear labeling (axes, legends) and marker differentiation for the bodies.  
+  2. User Interaction Controller  
+   – Optionally integrates interactive controls (e.g., pausing/resuming and adjusting simulation speed).  
+   – Could use Matplotlib’s interactive backends or minimal GUI elements (e.g., Tkinter) if needed.
 
 ──────────────────────────────
 3. Technology Stack Selection
 
-• Programming Language: Python 3.x  
- – Reason: Widely supported, excellent standard libraries, and Tkinter is part of Python’s standard distribution.
+• Primary Language: Python  
+ – Advantages: Wide availability of scientific computing libraries, ease of prototyping, and readability.  
+ – Best Practices: Use virtual environments and dependency managers (pip or Poetry) to manage packages.
 
-• UI Framework: Tkinter  
- – Reason: Built-in UI toolkit for Python, minimal external dependencies, and meets the lightweight requirement.
+• Numerical Computation: NumPy  
+ – Purpose: For efficient vectorized operations and matrix math during physics calculations.  
+ – Benefit: Improved performance (target <200ms per simulation step) even under interactive simulation conditions.
 
-• Networking Library: requests  
- – Reason: Simple, well-tested HTTP library that supports HTTPS (TLS 1.2+).
+• Advanced Integration (Optional): SciPy  
+ – Purpose: To offer more accurate and advanced numerical integration methods if needed.  
+ – Benefit: Allows switching from simple Euler integration to higher-order methods on demand.
 
-• Configuration File Format: JSON (or YAML/INI based on team expertise)  
- – JSON is recommended for its simplicity and native support in Python via the json module.
+• Visualization: Matplotlib  
+ – Purpose: Rendering 2D plots and animations of orbital trajectories.  
+ – Benefit: High configurability for both static plot outputs and interactive displays with built-in interactivity features.
 
-• Packaging: virtualenv, requirements.txt for dependency management.  
- – For building executables, PyInstaller can be used to generate a standalone app.
-
-• Logging: Python’s logging module  
- – Reason: Provides robust logging with support for different log levels and output formats.
-
-• Additional Modules (Optional):  
- – threading or asyncio (if API calls need to be asynchronous to keep the UI responsive).  
- – unittest/pytest for unit testing and quality assurance.
+• Configuration and Logging:  
+ – argparse for command-line arguments and JSON/YAML libraries for configuration files.  
+ – Python’s logging module for structured and audit logging.
 
 ──────────────────────────────
-4. Deployment Considerations
+4. Interaction Flow Summary
 
-• Use a virtual environment to manage dependencies.  
-• Create a requirements.txt file that locks in versions for external libraries.  
-• Package the application as a pip-installable module or via PyInstaller to distribute as a standalone executable.  
-• Provide clear documentation on installation, configuration, and usage.
+Step 1: Input and Configuration  
+ • The user supplies initial conditions and simulation parameters (via command-line or a configuration file).  
+ • The Configuration Parser validates inputs.
 
-──────────────────────────────
-5. Data Flow and Interactions
+Step 2: Simulation Engine Execution  
+ • The Physics Calculator computes forces, accelerations, and positions using the chosen numerical integrator.  
+ • The Time-Step Manager iterates over the simulation duration and monitors potential numerical issues.
 
-1. Application Initialization  
- – The Configuration Manager loads the config file.  
- – Logger is initialized for debugging and error notifications.  
- – The Business Logic Layer initializes the UI components.
+Step 3: Data I/O Operations  
+ • After each time step (or in batches), the simulation state is logged at the configured verbosity level through the Logger.  
+ • Outputs are exported to CSV or JSON formats as required.
 
-2. Fetching News (via API Service Module)  
- – On startup or when a user clicks refresh, the Business Logic Layer calls the API Service.  
- – API Service reads endpoint and API key from the Configuration Manager and makes a secure HTTP request using requests.  
- – On receiving and validating the response, headlines are passed to the Controller/Presenter.
-
-3. UI Update and Navigation  
- – The Controller updates the Home Screen list with headlines and displays a loading indicator during the fetch.  
- – When a headline is clicked, the Controller navigates to the Detail View, ensuring error handling if the article data is missing.  
- – The Detail View displays full content along with metadata and error options if data isn’t available.
-
-4. Error Handling and Logging  
- – Any errors during API calls or configuration issues are caught at the Data Access and Configuration layers.  
- – Descriptive errors are forwarded to the Business Logic Layer, which then invokes error handling in the UI (e.g., by showing a dialog).  
- – All critical events are logged with the Logger module.
+Step 4: Visualization (Optional)  
+ • If visualization is enabled, the Plot Manager captures simulation data in real time to produce animated plots.  
+ • The User Interaction Controller allows users to pause or adjust simulation speed on the fly.
 
 ──────────────────────────────
-6. Future Extensions
+5. Modularity and Extensibility Considerations
 
-• Implement a caching module within the Data Access Layer to allow offline viewing or reduce API call frequency.  
-• Enhance the UI with search/filter capabilities within the Business Logic Layer.  
-• Introduce more advanced error recovery or retry strategies, configurable via the external configuration file.
+• Loose Coupling:  
+ – Each module (simulation, I/O, visualization) communicates via well-defined interfaces (e.g., data objects that represent state at each time step).  
+ – This makes it straightforward to replace the numerical integrator or extend the simulation engine to include more bodies or a third dimension later on.
+
+• Testability:  
+ – Unit tests should be implemented for the physics calculations (e.g., verifying gravitational force and kinematics outcomes) using known physical scenarios such as circular or elliptical orbits.  
+ – Integration tests can validate that configuration inputs lead to expected simulation behavior.
+
+• Security:  
+ – Input validation routines are in place to check user-supplied values.  
+ – Secure coding practices following OWASP and industry standards ensure robustness even as the system evolves.
 
 ──────────────────────────────
-Conclusion
+6. Conclusion
 
-This high-level system architecture delineates clear responsibilities among the four primary layers—Presentation, Business Logic, Data Access, and Configuration Manager—while ensuring that the application remains secure, maintainable, and performance-conscious. The selected technology stack (Python 3.x, Tkinter, requests) aligns with the portability and minimal dependency requirements.
-
-Would you like to proceed with a detailed design of the UI layout (e.g., specific Tkinter widget hierarchies, layout management, and styling guidelines), or do you want to dive further into architecture and implementation details such as module interactions, code structure, or integration patterns?
+This high-level architecture clearly delineates the responsibilities into a Core Simulation Engine, Data I/O, and Visualization layer. Using Python, NumPy, and Matplotlib ensures that the simulator meets performance (sub-200ms simulation step), ease of use, and extensibility requirements while remaining modular enough to support future enhancements. Each module’s clear boundaries allow for independent development, testing, and future scalability—fulfilling all specified functional and non‐functional requirements.
