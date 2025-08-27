@@ -34,12 +34,12 @@
     &quot;assignee&quot;: &quot;PatrickZint&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/PatrickZint/python_3D_cosmo_sim_openAi_o3_mini",
-    "accountId": "d8a77ed2-0d78-4a11-bd5a-0ed55ea1a46c"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/PatrickZint/python_3D_cosmo_sim_openAi_o3_mini&quot;,
+    &quot;accountId&quot;: &quot;d8a77ed2-0d78-4a11-bd5a-0ed55ea1a46c&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
