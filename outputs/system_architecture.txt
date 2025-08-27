@@ -1,122 +1,162 @@
-Below is a high-level system architecture for the 2D orbital simulator that meets both the detailed functional and non‐functional requirements. This design decomposes the system into three main layers with clearly separated responsibilities, while selecting a technology stack that leverages Python’s rich numerical and visualization libraries.
+Below is a high-level system architecture for the 2D orbital simulator along with component designs and recommended technology stack selections. This design is organized into distinct modules based on the functional areas (physics, configuration, logging, visualization, and control) while keeping non-functional requirements (performance, extensibility, security, and maintainability) in mind.
 
-──────────────────────────────
-1. Overall Architectural Layers
+────────────────────────────────────────
+1. OVERALL ARCHITECTURE
 
-A. Core Simulation Engine Layer  
- • Responsibility:  
-  – Implements Newtonian physics, gravitational force computations, kinematic updating, and configurable numerical integration (e.g., Euler method or a higher-order method).  
-  – Manages simulation timing and error detection (e.g., warnings on unstable simulation behavior).  
- • Features:  
-  – Encapsulated “physics engine” module that can operate in “batch” mode for logging and file exports, as well as integrated with visualization when needed.  
-  – Fully decoupled from the user I/O and visualization modules to allow for independent testing and future extension (such as adding multi-body or 3D support).
+The simulator is structured as a modular Python application where each module communicates through well-defined interfaces. At a high level, the system is split into the following main blocks:
 
-B. Data I/O Layer  
- • Responsibility:  
-  – Handles input validation, configuration parsing (e.g., command-line flags or configuration files defined in JSON/YAML), and logging.  
-  – Exports simulation results (positions, velocities, forces over time) to multiple formats such as CSV, JSON, or standard output.  
- • Features:  
-  – Configurable verbosity levels to control the log details (from basic state variables to full computation trace).  
-  – Use of Python’s logging module for structured logging and audit trails.
+• Main Control/Orchestration Module  
+• Physics Engine Module  
+• Configuration Management Module  
+• Data Logging Module  
+• Visualization Module  
 
-C. Visualization Layer  
- • Responsibility:  
-  – Provides both static plots and animated, interactive 2D visualization of the celestial bodies’ trajectories using Matplotlib.  
-  – Optionally allows for interactive controls (pause/resume, speed adjustment) – either implemented as simple command-line key commands or a minimal GUI.  
- • Features:  
-  – Clearly labeled axes, legends, distinct marker colors, and scaling controls for intuitive user experience.  
-  – Isolation from the core simulation allows the visualization to be optionally enabled without impacting computational performance.
+A diagrammatic view of the overall system is as follows:
 
-──────────────────────────────
-2. Component Design Overview
+         +------------------------------+
+         |   Main Control/Orchestration |
+         |   - Simulation loop        |
+         |   - Error/Interrupt handling|
+         +--------------+---------------+
+                        |
+           +------------+-------------+
+           |                          |
+   +-------v------+           +-------v---------+
+   |  Physics     |           | Configuration   |
+   |  Engine      |           | Management      |
+   |  Module      |           | Module          |
+   +-------+------+           +-------+---------+
+           |                          |
+           +------------+-------------+
+                        |
+             +----------v----------+
+             |  Data Logging Module|
+             |  (logging state)    |
+             +----------+----------+
+                        |
+             +----------v----------+
+             | Visualization Module|
+             | (using Matplotlib)  |
+             +---------------------+
 
-A. Simulation Engine Module  
- • Components:  
-  1. Physics Calculator  
-   – Computes gravitational forces using F = G·(m₁*m₂)/r² with proper 2D vector handling.  
-   – Computes accelerations (a = F/m) and supports multiple integration strategies (e.g., Euler and potential higher-order methods).  
-  2. Integrator  
-   – Provides configurable time stepping and numerical integration routines.  
-   – Monitors simulation conditions and issues warnings if numerical divergence or instability is detected.  
-  3. Time-Step Manager  
-   – Manages simulation iterations using user-specified time-step size and total simulation duration.
+────────────────────────────────────────
+2. COMPONENT DETAILS
 
-B. Data I/O Module  
- • Components:  
-  1. Configuration Parser  
-   – Uses libraries such as argparse (for command-line) or a JSON/YAML parser for file configuration.  
-   – Validates inputs such as initial conditions, masses, time-step, and simulation duration.  
-  2. Logger  
-   – Employs Python’s logging module to log simulation events, error conditions, and state variables for debugging and audit logging.  
-   – Provides options to export output in CSV or JSON formats, and supports different levels of verbosity.
+A. Main Control/Orchestration Module
+   • Role:
+     – Serves as the entry point of the application.
+     – Parses the command-line arguments and loads configuration files.
+     – Initializes core modules (Physics Engine, Logging, Visualization).
+     – Coordinates the simulation loop, ensuring that physics calculations, data logging, and visualization updates occur in the correct sequence.
+     – Handles external interrupts (e.g., KeyboardInterrupt) to allow for graceful shutdown.
+   • Key Interfaces:
+     – update_simulation_state(dt)
+     – start_simulation(), stop_simulation()
 
-C. Visualization Module  
- • Components:  
-  1. Plot Manager  
-   – Uses Matplotlib to produce static trajectory plots and animated simulations.  
-   – Implements clear labeling (axes, legends) and marker differentiation for the bodies.  
-  2. User Interaction Controller  
-   – Optionally integrates interactive controls (e.g., pausing/resuming and adjusting simulation speed).  
-   – Could use Matplotlib’s interactive backends or minimal GUI elements (e.g., Tkinter) if needed.
+B. Physics Engine Module
+   • Role:
+     – Implements gravitational force calculation using Newton’s law.
+     – Computes Euclidean distance and applies safeguards (minimum r threshold) when bodies are near collision.
+     – Updates positions and velocities of celestial bodies using Euler’s method (with a strategy interface for future algorithms like Runge–Kutta).
+   • Internal Design & Extensibility:
+     – Define a CelestialBody class (with mass, position as a NumPy 2-element array, and velocity as a NumPy array).
+     – Use a strategy or factory pattern to allow switching integration schemes.
+     – Leverage NumPy vectorized operations to optimize iterative calculations.
+   • Public API:
+     – update_positions(dt)
+     – calculate_gravitational_force(body1, body2)
+     – set_integration_method(method)
 
-──────────────────────────────
-3. Technology Stack Selection
+C. Configuration Management Module
+   • Role:
+     – Parses input parameters via command-line arguments (using argparse) or external configuration files (JSON/YAML/INI).
+     – Validates parameters (e.g., checks for overlapping initial positions or impossible physical parameters).
+     – Exposes configuration settings to other modules.
+   • Key Libraries & Techniques:
+     – Python’s argparse for command-line parsing.
+     – json or PyYAML libraries for configuration file formats.
+     – Built-in validation/sanitization routines.
+   • Public API:
+     – load_config(filepath) / parse_args()
+     – validate_parameters(params)
 
-• Primary Language: Python  
- – Advantages: Wide availability of scientific computing libraries, ease of prototyping, and readability.  
- – Best Practices: Use virtual environments and dependency managers (pip or Poetry) to manage packages.
+D. Data Logging Module
+   • Role:
+     – Captures the simulation state (position, velocity, timestamp) at predefined intervals.
+     – Supports different output formats such as console, plain text, and CSV.
+     – Handles file operations securely following best practices.
+   • Key Libraries & Techniques:
+     – Python’s logging module (for console and file logging).
+     – csv module for CSV formatted output.
+     – Optionally, buffer data and flush outputs to disk periodically to ensure minimal latency.
+   • Public API:
+     – log_simulation_state(timestamp, state)
+     – set_logging_frequency(N)
 
-• Numerical Computation: NumPy  
- – Purpose: For efficient vectorized operations and matrix math during physics calculations.  
- – Benefit: Improved performance (target <200ms per simulation step) even under interactive simulation conditions.
+E. Visualization Module
+   • Role:
+     – Provides a 2D visualization of the simulation using Matplotlib.
+     – Supports both real-time animation (using Matplotlib’s FuncAnimation) and post-simulation static plotting.
+     – Offers basic interactivity (pause, zoom, pan) while remaining lightweight.
+   • Dependencies & Configuration:
+     – Matplotlib for plotting.
+     – A toggle (via command-line/configuration) to enable or disable visualization.
+   • Public API:
+     – init_visualization()
+     – update_plot(state)
+     – render_final_plot()
 
-• Advanced Integration (Optional): SciPy  
- – Purpose: To offer more accurate and advanced numerical integration methods if needed.  
- – Benefit: Allows switching from simple Euler integration to higher-order methods on demand.
+────────────────────────────────────────
+3. TECHNOLOGY STACK & TOOLS
 
-• Visualization: Matplotlib  
- – Purpose: Rendering 2D plots and animations of orbital trajectories.  
- – Benefit: High configurability for both static plot outputs and interactive displays with built-in interactivity features.
+Programming Language:
+   – Python (the simplicity, rich ecosystem, and ease-of-use for educational tools make Python ideal).
 
-• Configuration and Logging:  
- – argparse for command-line arguments and JSON/YAML libraries for configuration files.  
- – Python’s logging module for structured and audit logging.
+Key Libraries:
+   • NumPy – For optimized numerical and vector operations.
+   • Matplotlib – For 2D plotting and animation.
+   • argparse – For robust command-line argument parsing.
+   • json/PyYAML – For configuration file support.
+   • csv – For CSV output.
+   • logging – For recording simulation state and events.
 
-──────────────────────────────
-4. Interaction Flow Summary
+Testing & CI/CD:
+   • pytest – For creating a comprehensive suite of unit and integration tests (covering physics calculations, integration method outcomes, and configuration validation).
+   • cProfile – For performance profiling the simulation loop and visualization updates.
+   • Automated linters (flake8, pylint) – To ensure adherence to coding standards (e.g., PEP 8).
+   • GitHub Actions, Travis CI, or an equivalent solution for continuous integration.
 
-Step 1: Input and Configuration  
- • The user supplies initial conditions and simulation parameters (via command-line or a configuration file).  
- • The Configuration Parser validates inputs.
+Development Environment:
+   – Visual Studio Code or PyCharm for Integrated Development Environment (IDE).
+   – Virtual environments (e.g., venv or conda) for dependency management.
 
-Step 2: Simulation Engine Execution  
- • The Physics Calculator computes forces, accelerations, and positions using the chosen numerical integrator.  
- • The Time-Step Manager iterates over the simulation duration and monitors potential numerical issues.
+Documentation:
+   • Sphinx (or MkDocs) – For generating developer and user documentation based on inline comments and docstrings.
+   • Markdown/README for basic user instructions.
 
-Step 3: Data I/O Operations  
- • After each time step (or in batches), the simulation state is logged at the configured verbosity level through the Logger.  
- • Outputs are exported to CSV or JSON formats as required.
+────────────────────────────────────────
+4. EXTENSIBILITY & BEST PRACTICES
 
-Step 4: Visualization (Optional)  
- • If visualization is enabled, the Plot Manager captures simulation data in real time to produce animated plots.  
- • The User Interaction Controller allows users to pause or adjust simulation speed on the fly.
+• Modular Design:
+   – Each module is loosely coupled to ensure that future enhancements (e.g., support for n-body simulation or alternative integration methods) can be implemented without major refactoring.
 
-──────────────────────────────
-5. Modularity and Extensibility Considerations
+• Security & Input Validation:
+   – Ensure that the configuration module thoroughly sanitizes all user inputs.
+   – Use secure coding practices (following guidelines like OWASP recommendations for logging and handling of file I/O).
 
-• Loose Coupling:  
- – Each module (simulation, I/O, visualization) communicates via well-defined interfaces (e.g., data objects that represent state at each time step).  
- – This makes it straightforward to replace the numerical integrator or extend the simulation engine to include more bodies or a third dimension later on.
+• Performance Optimization:
+   – Use NumPy vectorized operations and pre-allocate arrays to reduce Python-level loop overhead.
+   – Minimize the impact of visualization on physics calculations by decoupling update frequencies.
 
-• Testability:  
- – Unit tests should be implemented for the physics calculations (e.g., verifying gravitational force and kinematics outcomes) using known physical scenarios such as circular or elliptical orbits.  
- – Integration tests can validate that configuration inputs lead to expected simulation behavior.
+• Testing & Documentation:
+   – Maintain an extensive test suite using pytest.
+   – Document module interfaces, configuration options, and design decisions to facilitate future developers in understanding and extending the simulator.
 
-• Security:  
- – Input validation routines are in place to check user-supplied values.  
- – Secure coding practices following OWASP and industry standards ensure robustness even as the system evolves.
+────────────────────────────────────────
+5. SUMMARY
 
-──────────────────────────────
-6. Conclusion
+This high-level architecture provides a flexible, modular framework for implementing the 2D orbital simulator. By dividing responsibilities across distinct modules—each with a clear API and well-defined technology stack—the design addresses both functional requirements (gravitational physics, motion integration, logging, and visualization) and non-functional requirements (performance, usability, security, and maintainability).
 
-This high-level architecture clearly delineates the responsibilities into a Core Simulation Engine, Data I/O, and Visualization layer. Using Python, NumPy, and Matplotlib ensures that the simulator meets performance (sub-200ms simulation step), ease of use, and extensibility requirements while remaining modular enough to support future enhancements. Each module’s clear boundaries allow for independent development, testing, and future scalability—fulfilling all specified functional and non‐functional requirements.
+The recommended Python technology stack (NumPy, Matplotlib, argparse, and logging) supports rapid prototyping and efficient computation while remaining accessible for educational purposes. This architecture lays a solid foundation for both the initial version and future enhancements of the simulator.
+
+This design should serve as a blueprint for architects and developers as they begin the implementation, ensuring that all major functional and non-functional considerations are met while keeping the system extensible and maintainable in the long run.
