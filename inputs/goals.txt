@@ -1,7 +1,7 @@
-Build a basic N-body simulation in 2D to model gravitational interactions between multiple planets using Newtonian physics.
+Develop a personal budget planner that tracks income and expenses and generates summaries.
 The result should be a functional application with, so if necessary, create required config files.
 Features:
-- Calculate gravitational forces, velocities, and positions
-- Output the forces and positions at each time step
-- 2D visualization in a GUI window
-- Dynamically handle any number of celestial bodies
+- Add, edit, and delete transactions
+- Categorize income and expenses
+- Generate monthly and yearly financial summaries
+- Display simple bar or pie charts for spending analysis
